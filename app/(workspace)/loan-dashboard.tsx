@@ -83,7 +83,7 @@ export function LoanDashboard({ data, rateRefreshing, rateRefreshError, onRefres
         {/* Rate watch is hidden for now. */}
         {/* <RateCard data={latestRate} loan={loan} /> */}
         <ActionCard icon={Sparkles} title="Test a prepayment" copy="See how an extra payment changes your tenure and total interest." action="Open simulator" href="/simulator" />
-        <ActionCard icon={FileText} title="Keep documents together" copy="Store statements, certificates and payment receipts privately." action="View documents" />
+        <ActionCard icon={FileText} title="Keep documents together" copy="Store statements, certificates and payment receipts privately." action="View documents" href="/documents" />
       </div>
     </>
   );

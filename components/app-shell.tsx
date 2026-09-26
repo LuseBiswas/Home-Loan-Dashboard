@@ -14,7 +14,7 @@ const navItems: { label: string; icon: typeof LayoutDashboard; href?: string }[]
   { label: "Simulator", icon: Gauge, href: "/simulator" },
   // Rate watch is hidden for now; re-add `Percent` to the lucide import to bring it back.
   // { label: "Rate watch", icon: Percent },
-  { label: "Documents", icon: FileText },
+  { label: "Documents", icon: FileText, href: "/documents" },
   { label: "Profile", icon: UserRound, href: "/profile" },
 ];
 
