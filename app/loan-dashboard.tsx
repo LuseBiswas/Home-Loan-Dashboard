@@ -106,7 +106,7 @@ export function LoanDashboard({ data, userEmail, onSignOut, rateRefreshing, rate
           </div>
           <nav className="mt-10 space-y-1" aria-label="Primary navigation">
             {navItems.map(({ label, icon: Icon, active }) => (
-              <button key={label} type="button" className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition ${active ? "bg-white/12 text-white" : "text-[#9ec0b8] hover:bg-white/7 hover:text-white"}`}>
+              <button key={label} type="button" className={`flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition ${active ? "bg-white/12 text-white" : "text-[#9ec0b8] hover:bg-white/7 hover:text-white"}`}>
                 <Icon className="size-[18px]" />{label}
               </button>
             ))}
@@ -234,7 +234,7 @@ function RateCard({ data, loan }: { data: DashboardData["latestRate"]; loan: Das
   const matches = expected !== null && Math.abs(expected - applied) < 0.001;
   const formatRate = (value: number | null | undefined) => value === null || value === undefined ? "—" : `${Number(value).toFixed(2)}%`;
 
-  return <Card className="border-[#dce5e2] bg-white shadow-none"><CardContent className="px-5"><div className="flex items-center justify-between"><div className="grid size-10 place-items-center rounded-xl bg-[#edf6f3] text-[#0f766e]"><Percent className="size-5" /></div><span className={`flex items-center gap-1 text-xs font-semibold ${data?.verified_at ? "text-[#0f766e]" : "text-amber-700"}`}><CheckCircle2 className="size-3.5" /> {data?.verified_at ? (matches ? "Formula matches" : "Review difference") : "Needs source verification"}</span></div><p className="mt-5 font-semibold">Interest rate watch</p><div className="mt-4 grid grid-cols-3 gap-2"><RateValue label="RBI repo" value={formatRate(data?.rbi_repo_rate)} icon={ArrowDownRight} /><RateValue label={loan.benchmark_name ?? "Benchmark"} value={formatRate(data?.lender_benchmark_rate)} icon={ArrowUpRight} /><RateValue label="Your rate" value={formatRate(applied)} /></div><button type="button" className="mt-5 flex items-center gap-1 text-sm font-semibold text-[#0f766e]">Open rate watch <ChevronRight className="size-4" /></button></CardContent></Card>;
+  return <Card className="border-[#dce5e2] bg-white shadow-none"><CardContent className="px-5"><div className="flex items-center justify-between"><div className="grid size-10 place-items-center rounded-xl bg-[#edf6f3] text-[#0f766e]"><Percent className="size-5" /></div><span className={`flex items-center gap-1 text-xs font-semibold ${data?.verified_at ? "text-[#0f766e]" : "text-amber-700"}`}><CheckCircle2 className="size-3.5" /> {data?.verified_at ? (matches ? "Formula matches" : "Review difference") : "Needs source verification"}</span></div><p className="mt-5 font-semibold">Interest rate watch</p><div className="mt-4 grid grid-cols-3 gap-2"><RateValue label="RBI repo" value={formatRate(data?.rbi_repo_rate)} icon={ArrowDownRight} /><RateValue label={loan.benchmark_name ?? "Benchmark"} value={formatRate(data?.lender_benchmark_rate)} icon={ArrowUpRight} /><RateValue label="Your rate" value={formatRate(applied)} /></div><button type="button" className="mt-5 flex cursor-pointer items-center gap-1 text-sm font-semibold text-[#0f766e]">Open rate watch <ChevronRight className="size-4" /></button></CardContent></Card>;
 }
 
 function RateValue({ label, value, icon: Icon }: { label: string; value: string; icon?: typeof ArrowDownRight }) {
@@ -242,5 +242,5 @@ function RateValue({ label, value, icon: Icon }: { label: string; value: string;
 }
 
 function ActionCard({ icon: Icon, title, copy, action }: { icon: typeof Sparkles; title: string; copy: string; action: string }) {
-  return <Card className="border-[#dce5e2] bg-white shadow-none"><CardContent className="px-5"><div className="grid size-10 place-items-center rounded-xl bg-[#edf6f3] text-[#0f766e]"><Icon className="size-5" /></div><p className="mt-5 font-semibold">{title}</p><p className="mt-2 text-sm leading-6 text-[#6a7f79]">{copy}</p><button type="button" className="mt-5 flex items-center gap-1 text-sm font-semibold text-[#0f766e]">{action} <ChevronRight className="size-4" /></button></CardContent></Card>;
+  return <Card className="border-[#dce5e2] bg-white shadow-none"><CardContent className="px-5"><div className="grid size-10 place-items-center rounded-xl bg-[#edf6f3] text-[#0f766e]"><Icon className="size-5" /></div><p className="mt-5 font-semibold">{title}</p><p className="mt-2 text-sm leading-6 text-[#6a7f79]">{copy}</p><button type="button" className="mt-5 flex cursor-pointer items-center gap-1 text-sm font-semibold text-[#0f766e]">{action} <ChevronRight className="size-4" /></button></CardContent></Card>;
 }

@@ -107,7 +107,7 @@ export function HomeLoanApp() {
     return () => window.clearTimeout(refreshTimer);
   }, [checkOfficialRates, data?.loan.id, session?.access_token]);
 
-  if (!authReady) return <LoadingScreen label="Opening your private workspace…" />;
+  if (!authReady) return <LoadingScreen label="Opening your workspace…" detail="Checking your secure sign-in." />;
   if (!session) return <AuthScreen />;
 
   if (loadError) {
@@ -121,7 +121,7 @@ export function HomeLoanApp() {
     );
   }
 
-  if (dataLoading) return <LoadingScreen label="Loading your Supabase records…" />;
+  if (dataLoading) return <LoadingScreen label="Preparing your loan dashboard…" detail="Fetching your balance, EMI schedule and rate checks." />;
 
   if (!data) {
     return (
@@ -202,7 +202,7 @@ function AuthScreen() {
               {mode === "signin" ? "Sign in" : "Create account"}
             </Button>
           </form>
-          <button type="button" className="mt-5 w-full text-sm font-semibold text-[#0f766e]" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setMessage(null); }}>
+          <button type="button" className="mt-5 w-full cursor-pointer text-sm font-semibold text-[#0f766e]" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setMessage(null); }}>
             {mode === "signin" ? "Create your account" : "Already have an account? Sign in"}
           </button>
           <div className="mt-6 flex items-start gap-2 border-t border-[#e6ecea] pt-5 text-xs leading-5 text-[#6a7f79]">
