@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import {
   ArrowDownRight, ArrowUpRight, CalendarDays, CheckCircle2, ChevronRight,
   FileText, IndianRupee, Percent, Sparkles, WalletCards,
@@ -80,7 +81,7 @@ export function LoanDashboard({ data, rateRefreshing, rateRefreshError, onRefres
 
       <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <RateCard data={latestRate} loan={loan} />
-        <ActionCard icon={Sparkles} title="Test a prepayment" copy="See how an extra payment changes your tenure and total interest." action="Open simulator" />
+        <ActionCard icon={Sparkles} title="Test a prepayment" copy="See how an extra payment changes your tenure and total interest." action="Open simulator" href="/simulator" />
         <ActionCard icon={FileText} title="Keep documents together" copy="Store statements, certificates and payment receipts privately." action="View documents" />
       </div>
     </>
@@ -104,6 +105,7 @@ function RateValue({ label, value, icon: Icon }: { label: string; value: string;
   return <div className="rounded-xl bg-[#f4f7f6] p-3"><p className="text-[0.7rem] text-[#6a7f79]">{label}</p><div className="mt-1 flex items-center gap-1"><p className="text-sm font-semibold">{value}</p>{Icon ? <Icon className="size-3 text-[#789089]" /> : null}</div></div>;
 }
 
-function ActionCard({ icon: Icon, title, copy, action }: { icon: typeof Sparkles; title: string; copy: string; action: string }) {
-  return <Card className="border-[#dce5e2] bg-white shadow-none"><CardContent className="px-5"><div className="grid size-10 place-items-center rounded-xl bg-[#edf6f3] text-[#0f766e]"><Icon className="size-5" /></div><p className="mt-5 font-semibold">{title}</p><p className="mt-2 text-sm leading-6 text-[#6a7f79]">{copy}</p><button type="button" className="mt-5 flex cursor-pointer items-center gap-1 text-sm font-semibold text-[#0f766e]">{action} <ChevronRight className="size-4" /></button></CardContent></Card>;
+function ActionCard({ icon: Icon, title, copy, action, href }: { icon: typeof Sparkles; title: string; copy: string; action: string; href?: string }) {
+  const actionClass = "mt-5 flex w-fit cursor-pointer items-center gap-1 text-sm font-semibold text-[#0f766e]";
+  return <Card className="border-[#dce5e2] bg-white shadow-none"><CardContent className="px-5"><div className="grid size-10 place-items-center rounded-xl bg-[#edf6f3] text-[#0f766e]"><Icon className="size-5" /></div><p className="mt-5 font-semibold">{title}</p><p className="mt-2 text-sm leading-6 text-[#6a7f79]">{copy}</p>{href ? <Link href={href} className={actionClass}>{action} <ChevronRight className="size-4" /></Link> : <button type="button" className={actionClass}>{action} <ChevronRight className="size-4" /></button>}</CardContent></Card>;
 }

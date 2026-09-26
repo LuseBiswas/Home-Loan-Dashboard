@@ -45,7 +45,7 @@ export type ScheduleRevision = {
   notes?: string | null;
 };
 
-function addMonthsIso(isoDate: string, monthsToAdd: number) {
+export function addMonthsIso(isoDate: string, monthsToAdd: number) {
   const [year, month, day] = isoDate.split("-").map(Number);
   const targetMonth = month - 1 + monthsToAdd;
   const targetYear = year + Math.floor(targetMonth / 12);

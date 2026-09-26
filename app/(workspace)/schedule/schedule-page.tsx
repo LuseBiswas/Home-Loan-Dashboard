@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { PiggyBank, Plus, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +13,8 @@ import { PrepaymentDialog } from "@/components/prepayment-dialog";
 import { Segmented } from "@/components/repayment-breakdown";
 import { useWorkspace } from "@/components/workspace";
 import { groupByYear, isEmi, loanSchedule, ScheduleRevision, totalsOf, YearType } from "@/lib/amortization";
-import { deletePrepayment, loadScheduleRevisions } from "@/lib/loan-service";
+import { deletePrepayment } from "@/lib/loan-service";
+import { useScheduleRevisions } from "@/lib/use-schedule-revisions";
 import { cn } from "@/lib/utils";
 
 const money = (value: number) => new Intl.NumberFormat("en-IN", {
@@ -29,41 +30,11 @@ function todayIso() {
   return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("-");
 }
 
-// Keeps the last loaded revisions so returning to this tab renders instantly while it refreshes.
-const revisionsCache = new Map<string, ScheduleRevision[]>();
-
 export function SchedulePage() {
   const { loan } = useWorkspace();
   const loanId = loan.id;
   const [yearType, setYearType] = useState<YearType>("financial");
-  const [revisions, setRevisions] = useState<{ loanId: string; items: ScheduleRevision[] } | null>(() => {
-    const cached = revisionsCache.get(loan.id);
-    return cached ? { loanId: loan.id, items: cached } : null;
-  });
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [refreshIndex, setRefreshIndex] = useState(0);
-
-  useEffect(() => {
-    let active = true;
-    loadScheduleRevisions(loanId)
-      .then((items) => {
-        if (!active) return;
-        revisionsCache.set(loanId, items);
-        setLoadError(null);
-        setRevisions({ loanId, items });
-      })
-      .catch((error: unknown) => {
-        if (active) setLoadError(error instanceof Error ? error.message : "Could not load your schedule.");
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [loanId, refreshIndex]);
-
-  const reload = useCallback(() => setRefreshIndex((value) => value + 1), []);
-  const ready = revisions?.loanId === loanId;
-  const items = useMemo(() => (ready ? revisions.items : []), [ready, revisions]);
+  const { revisions: items, ready, error: loadError, reload } = useScheduleRevisions(loanId);
   const rate = Number(loan.current_interest_rate);
   const rows = useMemo(() => loanSchedule(loan, rate, items), [loan, rate, items]);
   const years = useMemo(() => groupByYear(rows, yearType), [rows, yearType]);

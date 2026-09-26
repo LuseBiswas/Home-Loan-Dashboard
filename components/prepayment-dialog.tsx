@@ -37,9 +37,11 @@ type PrepaymentDialogProps = {
   revisions: ScheduleRevision[];
   onSaved: () => void;
   trigger: React.ReactNode;
+  // Pre-fills the form each time it opens, e.g. from the simulator.
+  initial?: { amount?: number; date?: string; reduce?: ReduceOption };
 };
 
-export function PrepaymentDialog({ loan, annualRate, revisions, onSaved, trigger }: PrepaymentDialogProps) {
+export function PrepaymentDialog({ loan, annualRate, revisions, onSaved, trigger, initial }: PrepaymentDialogProps) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(todayIso);
@@ -64,9 +66,9 @@ export function PrepaymentDialog({ loan, annualRate, revisions, onSaved, trigger
   const validationError = selected?.error ?? (latestRevisionDate && date < latestRevisionDate ? "Date must be on or after your last prepayment." : null);
 
   function reset() {
-    setAmount("");
-    setDate(todayIso());
-    setReduce("tenure");
+    setAmount(initial?.amount ? String(initial.amount) : "");
+    setDate(initial?.date ?? todayIso());
+    setReduce(initial?.reduce ?? "tenure");
     setReference("");
     setNotes("");
     setSaveError(null);
@@ -98,7 +100,7 @@ export function PrepaymentDialog({ loan, annualRate, revisions, onSaved, trigger
   }
 
   return (
-    <Dialog open={open} onOpenChange={(next) => { setOpen(next); if (!next) reset(); }}>
+    <Dialog open={open} onOpenChange={(next) => { reset(); setOpen(next); }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto border-[#dce5e2] bg-white text-[#10201d] sm:max-w-xl">
         <DialogHeader>
