@@ -12,7 +12,7 @@ import { ContentLoading } from "@/components/loading-screen";
 import { PrepaymentDialog } from "@/components/prepayment-dialog";
 import { Segmented } from "@/components/repayment-breakdown";
 import { useWorkspace } from "@/components/workspace";
-import { groupByYear, loanSchedule, ScheduleRevision, totalsOf, YearType } from "@/lib/amortization";
+import { groupByYear, isEmi, loanSchedule, ScheduleRevision, totalsOf, YearType } from "@/lib/amortization";
 import { deletePrepayment, loadScheduleRevisions } from "@/lib/loan-service";
 import { cn } from "@/lib/utils";
 
@@ -69,7 +69,9 @@ export function SchedulePage() {
   const years = useMemo(() => groupByYear(rows, yearType), [rows, yearType]);
   const totals = totalsOf(rows);
   const today = todayIso();
+  const emiRows = rows.filter(isEmi);
   const nextRow = rows.find((row) => row.dueDate >= today);
+  const nextEmi = emiRows.find((row) => row.dueDate >= today);
 
   useEffect(() => {
     if (!ready || window.location.hash !== "#next") return;
@@ -124,8 +126,12 @@ export function SchedulePage() {
       {header}
 
       <div className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Tile label="Monthly EMI" value={money(nextRow?.emi ?? rows.at(-1)!.emi)} note={`${rows.length} EMIs at ${rate.toFixed(2)}%`} />
-        <Tile label="Next EMI" value={nextRow ? shortDate(nextRow.dueDate) : "All paid"} note={nextRow ? `EMI ${nextRow.number} of ${rows.length}` : "Loan fully repaid"} />
+        <Tile label="Monthly EMI" value={money(nextEmi?.emi ?? emiRows.at(-1)?.emi ?? 0)} note={`${emiRows.length} EMIs at ${rate.toFixed(2)}%`} />
+        <Tile
+          label="Next payment"
+          value={nextRow ? shortDate(nextRow.dueDate) : "All paid"}
+          note={!nextRow ? "Loan fully repaid" : nextRow.kind === "first_installment" ? `First installment · ${money(nextRow.emi)}` : `EMI ${nextRow.number} of ${emiRows.length}`}
+        />
         <Tile label="Total interest" value={money(totals.interest)} note={totals.prepaid > 0 ? `After ${money(totals.prepaid)} prepaid` : `On ${money(totals.principal)} principal`} />
         <Tile label="Last EMI" value={shortDate(rows.at(-1)!.dueDate)} note={`Total paid ${money(totals.total)}`} />
       </div>
@@ -160,11 +166,14 @@ export function SchedulePage() {
                         <tr id={isNext ? "next" : undefined} className={cn("scroll-mt-32 border-t border-[#eef3f1]", isNext && "bg-[#ecfccb]", isPast && "text-[#789089]")}>
                           <td className="px-4 py-2">
                             <span className="inline-flex items-center gap-2">
-                              {row.number}
+                              {row.kind === "first_installment" ? <span className="text-xs font-medium text-[#587069]">First</span> : row.number}
                               {isNext ? <span className="rounded-full bg-[#173d35] px-2 py-0.5 text-[0.65rem] font-semibold text-white">Next</span> : null}
                             </span>
                           </td>
-                          <td className="px-4 py-2 whitespace-nowrap">{shortDate(row.dueDate)}</td>
+                          <td className="px-4 py-2 whitespace-nowrap">
+                            {shortDate(row.dueDate)}
+                            {row.kind === "first_installment" ? <span className="block text-[0.7rem] text-[#6a7f79]">Interest only · before regular EMIs</span> : null}
+                          </td>
                           <td className="px-4 py-2 text-right">{money(row.principal)}</td>
                           <td className="px-4 py-2 text-right">{money(row.interest)}</td>
                           <td className={cn("px-4 py-2 text-right", !isPast && "font-medium text-[#10201d]")}>{money(row.emi)}</td>

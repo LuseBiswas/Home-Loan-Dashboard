@@ -10,6 +10,8 @@ export type AmortizationRow = {
   exactInterest: number;
   // Extra principal paid after this EMI; `closing` already reflects it.
   prepayment: number;
+  // "first_installment" is the part payment before regular EMIs start (usually interest only).
+  kind: "emi" | "first_installment";
 };
 
 export type YearType = "financial" | "calendar";
@@ -109,6 +111,7 @@ export function buildAmortization({ principal, annualRate, months, startDate, de
       exactPrincipal: principalPart,
       exactInterest: interest,
       prepayment: 0,
+      kind: "emi",
     });
     balance = closing;
   }
@@ -151,7 +154,7 @@ function summarize(key: string, label: string, shortLabel: string, rows: Amortiz
     total: principal + interest,
     prepaid,
     closing: rows.at(-1)?.closing ?? 0,
-    emiCount: rows.length,
+    emiCount: rows.filter(isEmi).length,
     rows,
   };
 }
@@ -193,7 +196,35 @@ type LoanTerms = {
   original_tenure_months: number;
   regular_emi_start_date: string | null;
   regular_emi_amount: number;
+  first_installment_amount?: number | null;
+  first_installment_date?: string | null;
 };
+
+export function isEmi(row: AmortizationRow) {
+  return row.kind === "emi";
+}
+
+// The first installment collected before regular EMIs begin. Lenders collect it as interest
+// for the days between disbursement and the EMI cycle, so it doesn't reduce the principal.
+function firstInstallmentRow(loan: LoanTerms): AmortizationRow | null {
+  const amount = Number(loan.first_installment_amount ?? 0);
+  const date = loan.first_installment_date;
+  if (!date || !(amount > 0) || !loan.regular_emi_start_date || date >= loan.regular_emi_start_date) return null;
+  const principal = Number(loan.total_financed_amount);
+  return {
+    number: 0,
+    dueDate: date,
+    opening: principal,
+    principal: 0,
+    interest: Math.round(amount),
+    emi: Math.round(amount),
+    closing: principal,
+    exactPrincipal: 0,
+    exactInterest: amount,
+    prepayment: 0,
+    kind: "first_installment",
+  };
+}
 
 type LoanPath = {
   rows: AmortizationRow[];
@@ -250,10 +281,12 @@ function loanPath(loan: LoanTerms, annualRate: number, revisions: ScheduleRevisi
   return path;
 }
 
-// The loan's full EMI schedule at a given rate, including any prepayments; empty until the
-// EMI start date is known.
+// The loan's full repayment schedule at a given rate: the first installment (if any), every
+// EMI, and any prepayments. Empty until the EMI start date is known.
 export function loanSchedule(loan: LoanTerms, annualRate: number, revisions: ScheduleRevision[] = []) {
-  return loanPath(loan, annualRate, revisions)?.rows ?? [];
+  const rows = loanPath(loan, annualRate, revisions)?.rows ?? [];
+  const first = rows.length > 0 ? firstInstallmentRow(loan) : null;
+  return first ? [first, ...rows] : rows;
 }
 
 export type PrepaymentPlan = {

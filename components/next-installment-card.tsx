@@ -3,7 +3,7 @@ import { CalendarDays, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { AmortizationRow, totalsOf } from "@/lib/amortization";
+import { AmortizationRow, isEmi, totalsOf } from "@/lib/amortization";
 
 // Same hues as the repayment chart, stepped for the dark card (validated on #102f2a).
 const PRINCIPAL = "#0d9488";
@@ -32,10 +32,11 @@ type NextInstallmentCardProps = {
 
 export function NextInstallmentCard({ rows, upcoming }: NextInstallmentCardProps) {
   const today = localIso(new Date());
+  const emiTotal = rows.filter(isEmi).length;
   const nextRow = rows.find((row) => row.dueDate >= today);
-  const isFirstInstallment = upcoming?.installment_type === "first_installment";
-  const dueDate = upcoming?.due_date ?? nextRow?.dueDate;
-  const amount = upcoming ? Number(upcoming.scheduled_amount) : nextRow?.emi;
+  const isFirstInstallment = nextRow ? nextRow.kind === "first_installment" : upcoming?.installment_type === "first_installment";
+  const dueDate = nextRow?.dueDate ?? upcoming?.due_date;
+  const amount = nextRow?.emi ?? (upcoming ? Number(upcoming.scheduled_amount) : undefined);
   const daysUntilDue = dueDate
     ? Math.max(0, Math.round((new Date(`${dueDate}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime()) / 86_400_000))
     : null;
@@ -44,7 +45,8 @@ export function NextInstallmentCard({ rows, upcoming }: NextInstallmentCardProps
 
   const paidRows = rows.filter((row) => row.dueDate < today);
   const paid = totalsOf(paidRows);
-  const paidPercent = rows.length > 0 ? (paidRows.length / rows.length) * 100 : 0;
+  const paidPercent = emiTotal > 0 ? (paid.emiCount / emiTotal) * 100 : 0;
+  const firstEmi = rows.find(isEmi);
 
   return (
     <Card className="h-full border-[#dce5e2] bg-[#102f2a] text-white shadow-[0_10px_30px_rgba(20,50,44,0.08)]">
@@ -61,7 +63,14 @@ export function NextInstallmentCard({ rows, upcoming }: NextInstallmentCardProps
         <p className="text-sm text-[#9ec0b8]">Next installment</p>
         <p className="mt-1 text-4xl font-semibold tracking-[-0.04em]">{amount !== undefined ? money(amount) : "—"}</p>
         <p className="mt-2 text-sm text-[#c6d9d4]">{dueDate ? longDate(dueDate) : "No scheduled installment"}</p>
-        {split ? <p className="mt-1 text-xs text-[#9ec0b8]">EMI {split.number} of {rows.length}</p> : isFirstInstallment ? <p className="mt-1 text-xs text-[#9ec0b8]">First installment</p> : null}
+        {split ? <p className="mt-1 text-xs text-[#9ec0b8]">EMI {split.number} of {emiTotal}</p> : isFirstInstallment ? <p className="mt-1 text-xs text-[#9ec0b8]">First installment · interest only</p> : null}
+
+        {isFirstInstallment ? (
+          <div className="mt-6 space-y-2 text-sm">
+            <p className="text-xs leading-5 text-[#c6d9d4]">Interest for the days between disbursement and your EMI cycle. It doesn&apos;t reduce your principal.</p>
+            {firstEmi ? <Detail label={`Then EMI 1 on ${shortDate(firstEmi.dueDate)}`} value={money(firstEmi.emi)} /> : null}
+          </div>
+        ) : null}
 
         {split ? (
           <div className="mt-6">
@@ -83,7 +92,7 @@ export function NextInstallmentCard({ rows, upcoming }: NextInstallmentCardProps
         <div>
           <div className="flex items-baseline justify-between gap-3">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#9ec0b8]">Repaid so far</p>
-            <p className="text-xs text-[#c6d9d4]">{paidRows.length} of {rows.length} EMIs</p>
+            <p className="text-xs text-[#c6d9d4]">{paid.emiCount} of {emiTotal} EMIs</p>
           </div>
           <Progress value={paidPercent} className="mt-3 h-1.5 bg-white/10 [&_[data-slot=progress-indicator]]:bg-[#d9f99d]" />
           <div className="mt-4 space-y-2 text-sm">
@@ -94,7 +103,7 @@ export function NextInstallmentCard({ rows, upcoming }: NextInstallmentCardProps
           </div>
           <p className="mt-3 text-xs leading-5 text-[#9ec0b8]">
             {paidRows.length === 0 && rows[0]
-              ? `Your first EMI is on ${shortDate(rows[0].dueDate)}.`
+              ? `Your first ${rows[0].kind === "first_installment" ? "payment" : "EMI"} is on ${shortDate(rows[0].dueDate)}.`
               : "Based on your schedule, assuming every EMI was paid on time."}
           </p>
         </div>

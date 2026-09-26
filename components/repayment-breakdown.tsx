@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import {
-  AmortizationRow, crossoverRow, groupByYear, monthsOf, periodStartYear, PeriodSummary, totalsOf, YearType,
+  AmortizationRow, crossoverRow, isEmi, groupByYear, monthsOf, periodStartYear, PeriodSummary, totalsOf, YearType,
 } from "@/lib/amortization";
 import { cn } from "@/lib/utils";
 
@@ -102,7 +102,7 @@ export function RepaymentBreakdown({ rows, principal, annualRate }: RepaymentBre
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-base font-semibold">Repayment breakdown</p>
-            <p className="mt-1 text-sm text-[#6a7f79]">Estimated at {annualRate.toFixed(2)}% on {money(principal)} over {rows.length} EMIs</p>
+            <p className="mt-1 text-sm text-[#6a7f79]">Estimated at {annualRate.toFixed(2)}% on {money(principal)} over {rows.filter(isEmi).length} EMIs{rows[0]?.kind === "first_installment" ? " plus a first installment" : ""}</p>
           </div>
           <Segmented
             label="Chart"
@@ -278,7 +278,7 @@ function BreakdownTable({ points, view }: { points: PeriodSummary[]; view: View 
           {points.map((point) => (
             <tr key={point.key} className="border-t border-[#eef3f1]">
               <td className="px-3 py-2 font-medium whitespace-nowrap">{point.label}</td>
-              <td className="px-3 py-2 text-[#587069]">{view === "yearly" ? point.emiCount : firstRow(point)?.number}</td>
+              <td className="px-3 py-2 text-[#587069]">{view === "yearly" ? point.emiCount : firstRow(point)?.kind === "first_installment" ? "First" : firstRow(point)?.number}</td>
               <td className="px-3 py-2 text-right">{money(point.principal)}</td>
               <td className="px-3 py-2 text-right">{money(point.interest)}</td>
               <td className="px-3 py-2 text-right font-semibold">{money(point.total)}</td>

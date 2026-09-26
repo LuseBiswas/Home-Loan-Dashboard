@@ -14,7 +14,7 @@ import { RateWatchStrip } from "@/components/rate-watch-strip";
 import { NextInstallmentCard } from "@/components/next-installment-card";
 import { PrepaymentDialog } from "@/components/prepayment-dialog";
 import { RepaymentBreakdown } from "@/components/repayment-breakdown";
-import { loanSchedule } from "@/lib/amortization";
+import { isEmi, loanSchedule } from "@/lib/amortization";
 import type { DashboardData } from "@/lib/loan-service";
 
 const money = (value: number) => new Intl.NumberFormat("en-IN", {
@@ -43,8 +43,9 @@ export function LoanDashboard({ data, rateRefreshing, rateRefreshError, onRefres
   const principalPaid = Math.max(0, financed - outstandingPrincipal);
   const repaidPercent = financed > 0 ? (principalPaid / financed) * 100 : 0;
   const totalPrepaid = revisions.reduce((sum, revision) => sum + revision.amount, 0);
-  const firstRow = schedule[0];
-  const lastRow = schedule.at(-1);
+  const emiRows = schedule.filter(isEmi);
+  const firstRow = emiRows[0];
+  const lastRow = emiRows.at(-1);
   const todayLabel = new Intl.DateTimeFormat("en-IN", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   }).format(now);
@@ -89,7 +90,7 @@ export function LoanDashboard({ data, rateRefreshing, rateRefreshError, onRefres
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         <Card className="border-[#cfe4dc] bg-[#f3faf7] shadow-none lg:col-span-2">
           <CardContent className="flex flex-col gap-4 px-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#dcefe8] text-[#0f766e]"><CheckCircle2 className="size-5" /></div><div><p className="font-semibold text-[#173d35]">{revisions.length > 0 ? "Schedule revised after prepayments" : "Repayment schedule loaded"}</p><p className="mt-1 text-sm leading-6 text-[#587069]">{revisions.length > 0 ? `You've prepaid ${money(totalPrepaid)}. ` : firstRow ? `Your ${money(firstRow.emi)} monthly EMI begins on ${shortDate(firstRow.dueDate)}. ` : "Add your EMI start date to build your schedule. "}{lastRow ? `${schedule.length} EMIs in total, the last on ${shortDate(lastRow.dueDate)}.` : ""}</p></div></div>
+            <div className="flex gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#dcefe8] text-[#0f766e]"><CheckCircle2 className="size-5" /></div><div><p className="font-semibold text-[#173d35]">{revisions.length > 0 ? "Schedule revised after prepayments" : "Repayment schedule loaded"}</p><p className="mt-1 text-sm leading-6 text-[#587069]">{revisions.length > 0 ? `You've prepaid ${money(totalPrepaid)}. ` : firstRow ? `Your ${money(firstRow.emi)} monthly EMI begins on ${shortDate(firstRow.dueDate)}. ` : "Add your EMI start date to build your schedule. "}{lastRow ? `${emiRows.length} EMIs in total, the last on ${shortDate(lastRow.dueDate)}.` : ""}</p></div></div>
             <div className="flex shrink-0 gap-2">
               <PrepaymentDialog loan={loan} annualRate={rate} revisions={revisions} onSaved={onDataChanged} trigger={<Button variant="outline" className="border-[#bfd8cf] bg-white text-[#173d35]">Record prepayment</Button>} />
               <Button asChild variant="outline" className="border-[#bfd8cf] bg-white text-[#173d35]"><Link href="/schedule">View schedule</Link></Button>
