@@ -94,10 +94,11 @@ npm install
 
 ### 2. Create the database
 
-Open the Supabase SQL Editor and run:
+Open the Supabase SQL Editor and run each migration, in order:
 
 ```text
 supabase/migrations/0001_initial_schema.sql
+supabase/migrations/0002_prepayments.sql
 ```
 
 This creates the database tables, indexes, ownership policies, update trigger, and private `loan-documents` Storage bucket.

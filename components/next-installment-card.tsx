@@ -88,6 +88,7 @@ export function NextInstallmentCard({ rows, upcoming }: NextInstallmentCardProps
           <Progress value={paidPercent} className="mt-3 h-1.5 bg-white/10 [&_[data-slot=progress-indicator]]:bg-[#d9f99d]" />
           <div className="mt-4 space-y-2 text-sm">
             <Detail label="Principal repaid" value={money(paid.principal)} swatch={PRINCIPAL} />
+            {paid.prepaid > 0 ? <Detail label="Incl. prepayments" value={money(paid.prepaid)} /> : null}
             <Detail label="Interest paid" value={money(paid.interest)} swatch={INTEREST} />
             <Detail label="Total paid" value={money(paid.total)} strong />
           </div>

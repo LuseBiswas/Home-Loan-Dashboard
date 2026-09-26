@@ -135,7 +135,7 @@ export function RepaymentBreakdown({ rows, principal, annualRate }: RepaymentBre
       <CardContent className="px-2 pb-5 sm:px-5">
         <div className="grid grid-cols-2 gap-2 px-3 sm:grid-cols-4 sm:px-1">
           <SummaryTile label={view === "yearly" ? "Total you'll pay" : `Paid in ${activeYear.label}`} value={money(scope.total)} note={`${scope.emiCount} EMI${scope.emiCount === 1 ? "" : "s"}`} />
-          <SummaryTile label="Principal" value={money(scope.principal)} note="Reduces your loan" swatch={PRINCIPAL} />
+          <SummaryTile label="Principal" value={money(scope.principal)} note={scope.prepaid > 0 ? `Incl. ${money(scope.prepaid)} prepaid` : "Reduces your loan"} swatch={PRINCIPAL} />
           <SummaryTile label="Interest" value={money(scope.interest)} note={`${interestShare.toFixed(0)}% of what you pay`} swatch={INTEREST} />
           <SummaryTile label={view === "yearly" ? "Balance at end" : `Balance after ${activeYear.label}`} value={money(scope.closing)} note={view === "yearly" ? "Fully repaid" : "Outstanding principal"} />
         </div>
@@ -241,6 +241,7 @@ function BreakdownTooltip({ active, payload, view }: { active?: boolean; payload
       <p className="font-semibold text-[#10201d]">{point.label}{view === "yearly" ? <span className="font-normal text-[#6a7f79]"> · {point.emiCount} EMI{point.emiCount === 1 ? "" : "s"}</span> : null}</p>
       <div className="mt-1.5 space-y-1">
         <TooltipRow color={PRINCIPAL} label="Principal" value={money(point.principal)} />
+        {point.prepaid > 0 ? <p className="pl-3.5 text-[0.7rem] text-[#6a7f79]">incl. {money(point.prepaid)} prepaid</p> : null}
         <TooltipRow color={INTEREST} label="Interest" value={money(point.interest)} />
         <div className="flex justify-between gap-4 border-t border-[#eef3f1] pt-1 font-semibold text-[#10201d]"><span>{view === "yearly" ? "Total paid" : "EMI"}</span><span>{money(point.total)}</span></div>
         <div className="flex justify-between gap-4 text-[#6a7f79]"><span>Balance after</span><span className="font-medium text-[#173d35]">{money(point.closing)}</span></div>

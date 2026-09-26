@@ -1,3 +1,4 @@
+import type { AmortizationRow, PrepaymentPlan, ReduceOption, ScheduleRevision } from "@/lib/amortization";
 import { supabase } from "@/lib/supabase/client";
 
 export type LoanRow = {
@@ -50,6 +51,7 @@ export type DashboardData = {
   latestRate: RateEventRow | null;
   previousRate: RateEventRow | null;
   payments: PaymentRow[];
+  revisions: ScheduleRevision[];
 };
 
 export type LoanSetupInput = {
@@ -122,6 +124,7 @@ export async function createLoanProfile(userId: string, input: LoanSetupInput) {
         annual_interest_rate: input.currentInterestRate,
         emi_amount: input.regularEmiAmount,
         remaining_tenure_months: input.originalTenureMonths,
+        opening_principal: input.sanctionedPrincipal + input.insuranceAmount,
         is_current: true,
       })
       .select("id")
@@ -197,13 +200,14 @@ export async function loadPrimaryLoan(userId: string): Promise<LoanRow | null> {
 }
 
 export async function loadDashboardDetails(loanId: string): Promise<Omit<DashboardData, "loan">> {
-  const [installmentsResult, ratesResult, paymentsResult] = await Promise.all([
+  const [installmentsResult, ratesResult, paymentsResult, revisions] = await Promise.all([
     supabase
       .from("installments")
       .select(
-        "id, installment_number, installment_type, due_date, scheduled_amount, schedule_versions!inner(loan_id)",
+        "id, installment_number, installment_type, due_date, scheduled_amount, schedule_versions!inner(loan_id, is_current)",
       )
       .eq("schedule_versions.loan_id", loanId)
+      .eq("schedule_versions.is_current", true)
       .order("due_date", { ascending: true }),
     supabase
       .from("rate_events")
@@ -218,6 +222,7 @@ export async function loadDashboardDetails(loanId: string): Promise<Omit<Dashboa
       .select("amount, payment_date, principal_component")
       .eq("loan_id", loanId)
       .order("payment_date", { ascending: false }),
+    loadScheduleRevisions(loanId),
   ]);
 
   if (installmentsResult.error) throw installmentsResult.error;
@@ -229,7 +234,97 @@ export async function loadDashboardDetails(loanId: string): Promise<Omit<Dashboa
     latestRate: (ratesResult.data?.[0] ?? null) as RateEventRow | null,
     previousRate: (ratesResult.data?.[1] ?? null) as RateEventRow | null,
     payments: (paymentsResult.data ?? []) as PaymentRow[],
+    revisions,
   };
+}
+
+type VersionRow = {
+  version_number: number;
+  effective_date: string;
+  emi_amount: number;
+  remaining_tenure_months: number;
+  opening_principal: number | null;
+  is_current: boolean;
+  payment: { id: string; amount: number; transaction_reference: string | null; notes: string | null } | null;
+};
+
+// Schedule revisions created by prepayments, oldest first. A revision that kept the previous
+// EMI shortened the tenure; one with a new EMI kept the tenure.
+export async function loadScheduleRevisions(loanId: string): Promise<ScheduleRevision[]> {
+  const result = await supabase
+    .from("schedule_versions")
+    .select(
+      "version_number, effective_date, emi_amount, remaining_tenure_months, opening_principal, is_current, payment:payments!schedule_versions_payment_id_fkey(id, amount, transaction_reference, notes)",
+    )
+    .eq("loan_id", loanId)
+    .order("version_number", { ascending: true });
+
+  if (result.error) throw result.error;
+
+  const versions = (result.data ?? []) as unknown as VersionRow[];
+  const revisions: ScheduleRevision[] = [];
+  versions.forEach((version, index) => {
+    if (!version.payment || version.opening_principal === null) return;
+    const previousEmi = Number(versions[index - 1]?.emi_amount ?? version.emi_amount);
+    revisions.push({
+      paymentId: version.payment.id,
+      effectiveDate: version.effective_date,
+      amount: Number(version.payment.amount),
+      openingPrincipal: Number(version.opening_principal),
+      emi: Number(version.emi_amount),
+      months: version.remaining_tenure_months,
+      reduce: Number(version.emi_amount) === previousEmi ? "tenure" : "emi",
+      isCurrent: version.is_current,
+      transactionReference: version.payment.transaction_reference,
+      notes: version.payment.notes,
+    });
+  });
+  return revisions;
+}
+
+const paise = (value: number) => Math.round(value * 100) / 100;
+
+function installmentPayload(rows: AmortizationRow[]) {
+  return rows.map((row) => ({
+    installment_number: row.number,
+    due_date: row.dueDate,
+    scheduled_amount: row.emi,
+    opening_balance: paise(row.opening),
+    principal_amount: paise(Math.max(0, row.exactPrincipal)),
+    interest_amount: paise(row.exactInterest),
+    closing_balance: paise(row.closing),
+  }));
+}
+
+// Saves the payment, retires the current schedule and stores the revised one in a single
+// database transaction (see record_prepayment in 0002_prepayments.sql).
+export async function recordPrepayment(loanId: string, annualRate: number, input: {
+  date: string;
+  amount: number;
+  reduce: ReduceOption;
+  transactionReference: string;
+  notes: string;
+  // EMI stored on the current schedule version; kept as-is when the tenure is reduced.
+  currentEmi: number;
+}, plan: PrepaymentPlan) {
+  const result = await supabase.rpc("record_prepayment", {
+    p_loan_id: loanId,
+    p_payment_date: input.date,
+    p_amount: input.amount,
+    p_balance_before: paise(plan.balanceBefore),
+    p_annual_rate: annualRate,
+    p_new_emi: input.reduce === "tenure" ? input.currentEmi : plan.newEmi,
+    p_new_tenure_months: plan.installments.length,
+    p_installments: installmentPayload(plan.installments),
+    p_transaction_reference: input.transactionReference || null,
+    p_notes: input.notes || null,
+  });
+  if (result.error) throw result.error;
+}
+
+export async function deletePrepayment(paymentId: string) {
+  const result = await supabase.rpc("delete_prepayment", { p_payment_id: paymentId });
+  if (result.error) throw result.error;
 }
 
 export type RateHistoryRow = RateEventRow & {
