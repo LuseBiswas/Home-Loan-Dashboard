@@ -1,0 +1,85 @@
+"use client";
+
+import Link from "next/link";
+import {
+  Bell, CalendarDays, FileText, Gauge, Landmark, LayoutDashboard, Menu, Percent, ShieldCheck, UserRound,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ProfileMenu } from "@/components/profile-menu";
+
+export type AppSection = "overview" | "profile";
+
+const navItems: { label: string; icon: typeof LayoutDashboard; href?: string; section?: AppSection }[] = [
+  { label: "Overview", icon: LayoutDashboard, href: "/", section: "overview" },
+  { label: "Schedule", icon: CalendarDays },
+  { label: "Simulator", icon: Gauge },
+  { label: "Rate watch", icon: Percent },
+  { label: "Documents", icon: FileText },
+  { label: "Profile", icon: UserRound, href: "/profile", section: "profile" },
+];
+
+type AppShellProps = {
+  active: AppSection;
+  lenderName: string;
+  loanReference: string | null;
+  userEmail: string;
+  onSignOut: () => void;
+  children: React.ReactNode;
+};
+
+export function AppShell({ active, lenderName, loanReference, userEmail, onSignOut, children }: AppShellProps) {
+  return (
+    <main className="min-h-screen bg-[#f4f7f6] text-[#10201d]">
+      <div className="mx-auto flex min-h-screen max-w-[1600px]">
+        <aside className="hidden w-[244px] shrink-0 border-r border-[#dce5e2] bg-[#0d2824] px-5 py-7 text-white lg:flex lg:flex-col">
+          <div className="flex items-center gap-3 px-2">
+            <div className="grid size-10 place-items-center rounded-xl bg-[#d9f99d] text-[#173d35]">
+              <Landmark className="size-5" strokeWidth={2.3} />
+            </div>
+            <div>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[#9ec0b8]">Home loan</p>
+              <p className="text-lg font-semibold tracking-tight">Compass</p>
+            </div>
+          </div>
+          <nav className="mt-10 space-y-1" aria-label="Primary navigation">
+            {navItems.map(({ label, icon: Icon, href, section }) => {
+              const isActive = section === active;
+              const className = `flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition ${isActive ? "bg-white/12 text-white" : "text-[#9ec0b8] hover:bg-white/7 hover:text-white"}`;
+              return href ? (
+                <Link key={label} href={href} className={className} aria-current={isActive ? "page" : undefined}>
+                  <Icon className="size-[18px]" />{label}
+                </Link>
+              ) : (
+                <button key={label} type="button" className={className}>
+                  <Icon className="size-[18px]" />{label}
+                </button>
+              );
+            })}
+          </nav>
+          <div className="mt-auto rounded-2xl border border-white/10 bg-white/6 p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold"><ShieldCheck className="size-4 text-[#d9f99d]" />Private workspace</div>
+            <p className="mt-2 text-xs leading-5 text-[#9ec0b8]">Identifiers are masked. Only approved viewers can open this dashboard.</p>
+          </div>
+        </aside>
+
+        <section className="min-w-0 flex-1">
+          <header className="flex h-[76px] items-center justify-between border-b border-[#dce5e2] bg-white/85 px-5 backdrop-blur md:px-8 xl:px-10">
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open navigation"><Menu /></Button>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.13em] text-[#6a7f79]">Loan {loanReference ?? "reference unavailable"}</p>
+                <p className="mt-1 text-sm font-semibold text-[#243b36]">{lenderName}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="icon" aria-label="Notifications" className="rounded-full"><Bell className="size-4" /></Button>
+              <ProfileMenu userEmail={userEmail} lenderName={lenderName} loanReference={loanReference} onSignOut={onSignOut} />
+            </div>
+          </header>
+
+          <div className="px-5 py-7 md:px-8 xl:px-10 xl:py-9">{children}</div>
+        </section>
+      </div>
+    </main>
+  );
+}

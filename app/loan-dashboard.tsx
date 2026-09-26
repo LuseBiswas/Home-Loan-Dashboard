@@ -1,10 +1,8 @@
 "use client";
 
 import {
-  ArrowDownRight, ArrowUpRight, Bell, CalendarDays,
-  CheckCircle2, ChevronRight, FileText, Gauge, IndianRupee, Landmark,
-  LayoutDashboard, LogOut, Menu, Percent, ShieldCheck, Sparkles, TrendingDown,
-  WalletCards,
+  ArrowDownRight, ArrowUpRight, CalendarDays, CheckCircle2, ChevronRight,
+  FileText, IndianRupee, Percent, Sparkles, TrendingDown, WalletCards,
 } from "lucide-react";
 import { Area, AreaChart, CartesianGrid, ReferenceDot, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
@@ -12,20 +10,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AppShell } from "@/components/app-shell";
 import { RateWatchStrip } from "@/components/rate-watch-strip";
 import type { DashboardData } from "@/lib/loan-service";
 
 const chartConfig = {
   balance: { label: "Outstanding", color: "#0f766e" },
 } satisfies ChartConfig;
-
-const navItems = [
-  { label: "Overview", icon: LayoutDashboard, active: true },
-  { label: "Schedule", icon: CalendarDays },
-  { label: "Simulator", icon: Gauge },
-  { label: "Rate watch", icon: Percent },
-  { label: "Documents", icon: FileText },
-];
 
 const money = (value: number) => new Intl.NumberFormat("en-IN", {
   style: "currency", currency: "INR", maximumFractionDigits: 0,
@@ -83,7 +74,6 @@ export function LoanDashboard({ data, userEmail, onSignOut, rateRefreshing, rate
     loan.original_tenure_months,
     chartStartYear,
   );
-  const initials = userEmail.split("@")[0]?.split(/[._-]/).map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "U";
   const todayLabel = new Intl.DateTimeFormat("en-IN", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   }).format(now);
@@ -92,131 +82,88 @@ export function LoanDashboard({ data, userEmail, onSignOut, rateRefreshing, rate
     : `${loan.original_tenure_months}-month view`;
 
   return (
-    <main className="min-h-screen bg-[#f4f7f6] text-[#10201d]">
-      <div className="mx-auto flex min-h-screen max-w-[1600px]">
-        <aside className="hidden w-[244px] shrink-0 border-r border-[#dce5e2] bg-[#0d2824] px-5 py-7 text-white lg:flex lg:flex-col">
-          <div className="flex items-center gap-3 px-2">
-            <div className="grid size-10 place-items-center rounded-xl bg-[#d9f99d] text-[#173d35]">
-              <Landmark className="size-5" strokeWidth={2.3} />
-            </div>
-            <div>
-              <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[#9ec0b8]">Home loan</p>
-              <p className="text-lg font-semibold tracking-tight">Compass</p>
-            </div>
-          </div>
-          <nav className="mt-10 space-y-1" aria-label="Primary navigation">
-            {navItems.map(({ label, icon: Icon, active }) => (
-              <button key={label} type="button" className={`flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition ${active ? "bg-white/12 text-white" : "text-[#9ec0b8] hover:bg-white/7 hover:text-white"}`}>
-                <Icon className="size-[18px]" />{label}
-              </button>
-            ))}
-          </nav>
-          <div className="mt-auto rounded-2xl border border-white/10 bg-white/6 p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold"><ShieldCheck className="size-4 text-[#d9f99d]" />Private workspace</div>
-            <p className="mt-2 text-xs leading-5 text-[#9ec0b8]">Identifiers are masked. Only approved viewers can open this dashboard.</p>
-          </div>
-        </aside>
+    <AppShell active="overview" lenderName={loan.lender_name} loanReference={loan.loan_reference_masked} userEmail={userEmail} onSignOut={onSignOut}>
+      <RateWatchStrip
+        benchmarkName={loan.benchmark_name}
+        spread={loan.benchmark_spread_percent === null ? null : Number(loan.benchmark_spread_percent)}
+        latest={latestRate}
+        previous={previousRate}
+        refreshing={rateRefreshing}
+        refreshError={rateRefreshError}
+        onRefresh={onRefreshRates}
+      />
 
-        <section className="min-w-0 flex-1">
-          <header className="flex h-[76px] items-center justify-between border-b border-[#dce5e2] bg-white/85 px-5 backdrop-blur md:px-8 xl:px-10">
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open navigation"><Menu /></Button>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-[0.13em] text-[#6a7f79]">Loan {loan.loan_reference_masked ?? "reference unavailable"}</p>
-                <p className="mt-1 text-sm font-semibold text-[#243b36]">{loan.lender_name}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="icon" aria-label="Notifications" className="rounded-full"><Bell className="size-4" /></Button>
-              <Button variant="ghost" className="rounded-full px-2" onClick={onSignOut} title="Sign out"><span className="grid size-10 place-items-center rounded-full bg-[#d9f99d] text-sm font-bold text-[#173d35]">{initials}</span><LogOut className="size-4 text-[#587069]" /></Button>
-            </div>
-          </header>
-
-          <div className="px-5 py-7 md:px-8 xl:px-10 xl:py-9">
-            <RateWatchStrip
-              benchmarkName={loan.benchmark_name}
-              spread={loan.benchmark_spread_percent === null ? null : Number(loan.benchmark_spread_percent)}
-              latest={latestRate}
-              previous={previousRate}
-              refreshing={rateRefreshing}
-              refreshError={rateRefreshError}
-              onRefresh={onRefreshRates}
-            />
-
-            <div className="mt-7 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-              <div>
-                <p className="text-sm font-medium text-[#587069]">{todayLabel}</p>
-                <h1 className="mt-1 text-3xl font-semibold tracking-[-0.035em] md:text-[2.15rem]">Your loan, clearly mapped.</h1>
-              </div>
-              <Tabs defaultValue="contractual" className="w-full sm:w-auto">
-                <TabsList className="w-full bg-[#e8efed] sm:w-auto">
-                  <TabsTrigger value="contractual">Contractual</TabsTrigger>
-                  <TabsTrigger value="actual">Actual</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
-
-            <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <MetricCard label="Outstanding principal" value={money(outstandingPrincipal)} note={principalPaid > 0 ? `${money(principalPaid)} principal repaid` : "Before first scheduled EMI"} icon={IndianRupee} />
-              <MetricCard label="Regular EMI" value={money(Number(loan.regular_emi_amount))} note={loan.regular_emi_start_date ? `Starts ${shortDate(loan.regular_emi_start_date)}` : "Start date unavailable"} icon={WalletCards} />
-              <MetricCard label="Current interest rate" value={`${rate.toFixed(2)}%`} note={`${loan.interest_type === "floating" ? "Floating" : loan.interest_type} · ${loan.benchmark_name ?? "Benchmark unavailable"}${loan.benchmark_spread_percent !== null ? ` ${Number(loan.benchmark_spread_percent) >= 0 ? "+" : "−"} ${Math.abs(Number(loan.benchmark_spread_percent)).toFixed(2)}%` : ""}`} icon={Percent} />
-              <MetricCard label="Original tenure" value={`${loan.original_tenure_months} months`} note="Schedule revisions are versioned" icon={CalendarDays} />
-            </div>
-
-            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.75fr)]">
-              <Card className="overflow-hidden border-[#dce5e2] bg-white shadow-[0_10px_30px_rgba(20,50,44,0.04)]">
-                <CardHeader className="flex-row items-start justify-between gap-4 px-6">
-                  <div><p className="text-base font-semibold">Outstanding balance</p><p className="mt-1 text-sm text-[#6a7f79]">Illustrative path at {rate.toFixed(2)}%</p></div>
-                  <div className="rounded-full bg-[#edf6f3] px-3 py-1.5 text-xs font-semibold text-[#0f766e]">{scheduleViewLabel}</div>
-                </CardHeader>
-                <CardContent className="px-2 pb-1 sm:px-5">
-                  <ChartContainer config={chartConfig} className="h-[290px] w-full aspect-auto">
-                    <AreaChart data={balanceData} margin={{ left: 0, right: 16, top: 12, bottom: 0 }}>
-                      <defs><linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#0f766e" stopOpacity={0.24} /><stop offset="100%" stopColor="#0f766e" stopOpacity={0.02} /></linearGradient></defs>
-                      <CartesianGrid vertical={false} stroke="#e8efed" />
-                      <XAxis dataKey="year" axisLine={false} tickLine={false} tickMargin={12} />
-                      <YAxis axisLine={false} tickLine={false} width={42} tickFormatter={(value) => `₹${value}L`} />
-                      <ChartTooltip cursor={{ stroke: "#9fb8b2", strokeDasharray: "4 4" }} content={<ChartTooltipContent formatter={(value) => <span className="font-semibold">₹{String(value)} lakh</span>} />} />
-                      <Area type="monotone" dataKey="balance" stroke="#0f766e" strokeWidth={3} fill="url(#balanceFill)" />
-                      <ReferenceDot x={String(chartStartYear)} y={balanceData[0]?.balance ?? 0} r={5} fill="#d9f99d" stroke="#0d2824" strokeWidth={3} />
-                    </AreaChart>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="border-[#dce5e2] bg-[#102f2a] text-white shadow-[0_10px_30px_rgba(20,50,44,0.08)]">
-                <CardHeader className="px-6"><div className="flex items-center justify-between"><div className="grid size-10 place-items-center rounded-xl bg-white/10"><CalendarDays className="size-5 text-[#d9f99d]" /></div><span className="rounded-full bg-[#d9f99d] px-2.5 py-1 text-xs font-semibold text-[#173d35]">{upcomingInstallment ? (daysUntilDue === 0 ? "Due today" : `In ${daysUntilDue} day${daysUntilDue === 1 ? "" : "s"}`) : "No upcoming"}</span></div></CardHeader>
-                <CardContent className="px-6">
-                  <p className="text-sm text-[#9ec0b8]">Next installment</p><p className="mt-1 text-4xl font-semibold tracking-[-0.04em]">{money(Number(upcomingInstallment?.scheduled_amount ?? loan.regular_emi_amount))}</p><p className="mt-2 text-sm text-[#c6d9d4]">{upcomingInstallment ? displayDate(upcomingInstallment.due_date) : "No scheduled installment"}</p>
-                  <div className="my-6 h-px bg-white/10" />
-                  <div className="space-y-3 text-sm">
-                    <InstallmentDetail label="Installment type" value={upcomingInstallment?.installment_type === "first_installment" ? "First installment" : "Regular EMI"} />
-                    <InstallmentDetail label={regularInstallment ? `Regular EMI from ${shortDate(regularInstallment.due_date)}` : "Regular EMI"} value={money(Number(loan.regular_emi_amount))} />
-                  </div>
-                  <Button className="mt-6 w-full bg-[#d9f99d] text-[#173d35] hover:bg-[#c9ee88]">Record payment<ChevronRight className="size-4" /></Button>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="mt-4 grid gap-4 lg:grid-cols-3">
-              <Card className="border-[#cfe4dc] bg-[#f3faf7] shadow-none lg:col-span-2">
-                <CardContent className="flex flex-col gap-4 px-5 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#dcefe8] text-[#0f766e]"><CheckCircle2 className="size-5" /></div><div><p className="font-semibold text-[#173d35]">Repayment schedule loaded</p><p className="mt-1 text-sm leading-6 text-[#587069]">{firstInstallment ? `${money(Number(firstInstallment.scheduled_amount))} is due on ${shortDate(firstInstallment.due_date)}.` : "First installment is not available."} {regularInstallment ? `Your regular ${money(Number(regularInstallment.scheduled_amount))} monthly EMI begins on ${shortDate(regularInstallment.due_date)}.` : ""}</p></div></div>
-                  <Button variant="outline" className="shrink-0 border-[#bfd8cf] bg-white text-[#173d35]">View schedule</Button>
-                </CardContent>
-              </Card>
-              <Card className="border-[#dce5e2] bg-white shadow-none"><CardContent className="px-5"><div className="flex items-center justify-between"><div><p className="text-sm text-[#6a7f79]">Principal repaid</p><p className="mt-1 text-2xl font-semibold">{repaidPercent.toFixed(1)}%</p></div><div className="grid size-10 place-items-center rounded-xl bg-[#edf6f3] text-[#0f766e]"><TrendingDown className="size-5" /></div></div><Progress value={repaidPercent} className="mt-5 h-2 bg-[#e4ecea] [&_[data-slot=progress-indicator]]:bg-[#0f766e]" /><p className="mt-3 text-xs text-[#6a7f79]">Calculated only from recorded principal components.</p></CardContent></Card>
-            </div>
-
-            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <RateCard data={latestRate} loan={loan} />
-              <ActionCard icon={Sparkles} title="Test a prepayment" copy="See how an extra payment changes your tenure and total interest." action="Open simulator" />
-              <ActionCard icon={FileText} title="Keep documents together" copy="Store statements, certificates and payment receipts privately." action="View documents" />
-            </div>
-          </div>
-        </section>
+      <div className="mt-7 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+        <div>
+          <p className="text-sm font-medium text-[#587069]">{todayLabel}</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-[-0.035em] md:text-[2.15rem]">Your loan, clearly mapped.</h1>
+        </div>
+        <Tabs defaultValue="contractual" className="w-full sm:w-auto">
+          <TabsList className="w-full bg-[#e8efed] sm:w-auto">
+            <TabsTrigger value="contractual">Contractual</TabsTrigger>
+            <TabsTrigger value="actual">Actual</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
-    </main>
+
+      <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Outstanding principal" value={money(outstandingPrincipal)} note={principalPaid > 0 ? `${money(principalPaid)} principal repaid` : "Before first scheduled EMI"} icon={IndianRupee} />
+        <MetricCard label="Regular EMI" value={money(Number(loan.regular_emi_amount))} note={loan.regular_emi_start_date ? `Starts ${shortDate(loan.regular_emi_start_date)}` : "Start date unavailable"} icon={WalletCards} />
+        <MetricCard label="Current interest rate" value={`${rate.toFixed(2)}%`} note={`${loan.interest_type === "floating" ? "Floating" : loan.interest_type} · ${loan.benchmark_name ?? "Benchmark unavailable"}${loan.benchmark_spread_percent !== null ? ` ${Number(loan.benchmark_spread_percent) >= 0 ? "+" : "−"} ${Math.abs(Number(loan.benchmark_spread_percent)).toFixed(2)}%` : ""}`} icon={Percent} />
+        <MetricCard label="Original tenure" value={`${loan.original_tenure_months} months`} note="Schedule revisions are versioned" icon={CalendarDays} />
+      </div>
+
+      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.75fr)]">
+        <Card className="overflow-hidden border-[#dce5e2] bg-white shadow-[0_10px_30px_rgba(20,50,44,0.04)]">
+          <CardHeader className="flex-row items-start justify-between gap-4 px-6">
+            <div><p className="text-base font-semibold">Outstanding balance</p><p className="mt-1 text-sm text-[#6a7f79]">Illustrative path at {rate.toFixed(2)}%</p></div>
+            <div className="rounded-full bg-[#edf6f3] px-3 py-1.5 text-xs font-semibold text-[#0f766e]">{scheduleViewLabel}</div>
+          </CardHeader>
+          <CardContent className="px-2 pb-1 sm:px-5">
+            <ChartContainer config={chartConfig} className="h-[290px] w-full aspect-auto">
+              <AreaChart data={balanceData} margin={{ left: 0, right: 16, top: 12, bottom: 0 }}>
+                <defs><linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#0f766e" stopOpacity={0.24} /><stop offset="100%" stopColor="#0f766e" stopOpacity={0.02} /></linearGradient></defs>
+                <CartesianGrid vertical={false} stroke="#e8efed" />
+                <XAxis dataKey="year" axisLine={false} tickLine={false} tickMargin={12} />
+                <YAxis axisLine={false} tickLine={false} width={42} tickFormatter={(value) => `₹${value}L`} />
+                <ChartTooltip cursor={{ stroke: "#9fb8b2", strokeDasharray: "4 4" }} content={<ChartTooltipContent formatter={(value) => <span className="font-semibold">₹{String(value)} lakh</span>} />} />
+                <Area type="monotone" dataKey="balance" stroke="#0f766e" strokeWidth={3} fill="url(#balanceFill)" />
+                <ReferenceDot x={String(chartStartYear)} y={balanceData[0]?.balance ?? 0} r={5} fill="#d9f99d" stroke="#0d2824" strokeWidth={3} />
+              </AreaChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="border-[#dce5e2] bg-[#102f2a] text-white shadow-[0_10px_30px_rgba(20,50,44,0.08)]">
+          <CardHeader className="px-6"><div className="flex items-center justify-between"><div className="grid size-10 place-items-center rounded-xl bg-white/10"><CalendarDays className="size-5 text-[#d9f99d]" /></div><span className="rounded-full bg-[#d9f99d] px-2.5 py-1 text-xs font-semibold text-[#173d35]">{upcomingInstallment ? (daysUntilDue === 0 ? "Due today" : `In ${daysUntilDue} day${daysUntilDue === 1 ? "" : "s"}`) : "No upcoming"}</span></div></CardHeader>
+          <CardContent className="px-6">
+            <p className="text-sm text-[#9ec0b8]">Next installment</p><p className="mt-1 text-4xl font-semibold tracking-[-0.04em]">{money(Number(upcomingInstallment?.scheduled_amount ?? loan.regular_emi_amount))}</p><p className="mt-2 text-sm text-[#c6d9d4]">{upcomingInstallment ? displayDate(upcomingInstallment.due_date) : "No scheduled installment"}</p>
+            <div className="my-6 h-px bg-white/10" />
+            <div className="space-y-3 text-sm">
+              <InstallmentDetail label="Installment type" value={upcomingInstallment?.installment_type === "first_installment" ? "First installment" : "Regular EMI"} />
+              <InstallmentDetail label={regularInstallment ? `Regular EMI from ${shortDate(regularInstallment.due_date)}` : "Regular EMI"} value={money(Number(loan.regular_emi_amount))} />
+            </div>
+            <Button className="mt-6 w-full bg-[#d9f99d] text-[#173d35] hover:bg-[#c9ee88]">Record payment<ChevronRight className="size-4" /></Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="mt-4 grid gap-4 lg:grid-cols-3">
+        <Card className="border-[#cfe4dc] bg-[#f3faf7] shadow-none lg:col-span-2">
+          <CardContent className="flex flex-col gap-4 px-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#dcefe8] text-[#0f766e]"><CheckCircle2 className="size-5" /></div><div><p className="font-semibold text-[#173d35]">Repayment schedule loaded</p><p className="mt-1 text-sm leading-6 text-[#587069]">{firstInstallment ? `${money(Number(firstInstallment.scheduled_amount))} is due on ${shortDate(firstInstallment.due_date)}.` : "First installment is not available."} {regularInstallment ? `Your regular ${money(Number(regularInstallment.scheduled_amount))} monthly EMI begins on ${shortDate(regularInstallment.due_date)}.` : ""}</p></div></div>
+            <Button variant="outline" className="shrink-0 border-[#bfd8cf] bg-white text-[#173d35]">View schedule</Button>
+          </CardContent>
+        </Card>
+        <Card className="border-[#dce5e2] bg-white shadow-none"><CardContent className="px-5"><div className="flex items-center justify-between"><div><p className="text-sm text-[#6a7f79]">Principal repaid</p><p className="mt-1 text-2xl font-semibold">{repaidPercent.toFixed(1)}%</p></div><div className="grid size-10 place-items-center rounded-xl bg-[#edf6f3] text-[#0f766e]"><TrendingDown className="size-5" /></div></div><Progress value={repaidPercent} className="mt-5 h-2 bg-[#e4ecea] [&_[data-slot=progress-indicator]]:bg-[#0f766e]" /><p className="mt-3 text-xs text-[#6a7f79]">Calculated only from recorded principal components.</p></CardContent></Card>
+      </div>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <RateCard data={latestRate} loan={loan} />
+        <ActionCard icon={Sparkles} title="Test a prepayment" copy="See how an extra payment changes your tenure and total interest." action="Open simulator" />
+        <ActionCard icon={FileText} title="Keep documents together" copy="Store statements, certificates and payment receipts privately." action="View documents" />
+      </div>
+    </AppShell>
   );
 }
 

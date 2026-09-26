@@ -16,6 +16,9 @@ export type LoanRow = {
   interest_type: "floating" | "fixed" | "hybrid";
   benchmark_name: string | null;
   benchmark_spread_percent: number | null;
+  property_reference: string | null;
+  notes: string | null;
+  created_at: string;
 };
 
 type InstallmentRow = {
@@ -226,5 +229,175 @@ export async function loadDashboardData(userId: string): Promise<DashboardData |
     latestRate: (ratesResult.data?.[0] ?? null) as RateEventRow | null,
     previousRate: (ratesResult.data?.[1] ?? null) as RateEventRow | null,
     payments: (paymentsResult.data ?? []) as PaymentRow[],
+  };
+}
+
+export type RateHistoryRow = RateEventRow & {
+  id: string;
+  effective_date: string;
+  notes: string | null;
+  created_at: string;
+};
+
+export type ProfileData = {
+  loan: LoanRow;
+  rateHistory: RateHistoryRow[];
+};
+
+export type LoanDetailsInput = {
+  lenderName: string;
+  loanReference: string;
+  sanctionedPrincipal: number;
+  insuranceAmount: number;
+  interestType: "floating" | "fixed" | "hybrid";
+  benchmarkName: string;
+  benchmarkSpreadPercent: number | null;
+  propertyReference: string;
+  notes: string;
+};
+
+export type RateRevisionInput = {
+  newRate: number;
+  effectiveDate: string;
+  note: string;
+};
+
+const rateHistoryColumns =
+  "id, effective_date, rbi_repo_rate, lender_benchmark_rate, expected_loan_rate, actual_applied_rate, verified_at, source_url, notes, created_at";
+
+export async function loadProfileData(userId: string): Promise<ProfileData | null> {
+  const loanResult = await supabase
+    .from("loans")
+    .select("*")
+    .eq("owner_id", userId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (loanResult.error) throw loanResult.error;
+  if (!loanResult.data) return null;
+
+  const loan = loanResult.data as LoanRow;
+  const historyResult = await supabase
+    .from("rate_events")
+    .select(rateHistoryColumns)
+    .eq("loan_id", loan.id)
+    .order("created_at", { ascending: false });
+
+  if (historyResult.error) throw historyResult.error;
+
+  return { loan, rateHistory: (historyResult.data ?? []) as RateHistoryRow[] };
+}
+
+export async function updateLoanDetails(loan: LoanRow, input: LoanDetailsInput) {
+  const result = await supabase
+    .from("loans")
+    .update({
+      lender_name: input.lenderName,
+      loan_reference_masked: input.loanReference || null,
+      sanctioned_principal: input.sanctionedPrincipal,
+      insurance_amount: input.insuranceAmount,
+      interest_type: input.interestType,
+      benchmark_name: input.benchmarkName || null,
+      benchmark_spread_percent: input.benchmarkSpreadPercent,
+      property_reference: input.propertyReference || null,
+      notes: input.notes || null,
+    })
+    .eq("id", loan.id);
+
+  if (result.error) throw result.error;
+
+  const previousSpread = loan.benchmark_spread_percent === null ? null : Number(loan.benchmark_spread_percent);
+  if (previousSpread === input.benchmarkSpreadPercent) return;
+
+  // A corrected spread changes the contract formula, so keep the latest snapshot's expected rate in step.
+  const latest = await supabase
+    .from("rate_events")
+    .select("id, lender_benchmark_rate")
+    .eq("loan_id", loan.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latest.error) throw latest.error;
+  if (!latest.data) return;
+
+  const benchmark = latest.data.lender_benchmark_rate === null ? null : Number(latest.data.lender_benchmark_rate);
+  const snapshotResult = await supabase
+    .from("rate_events")
+    .update({
+      benchmark_spread_percent: input.benchmarkSpreadPercent,
+      expected_loan_rate: benchmark !== null && input.benchmarkSpreadPercent !== null
+        ? benchmark + input.benchmarkSpreadPercent
+        : null,
+    })
+    .eq("id", latest.data.id);
+
+  if (snapshotResult.error) throw snapshotResult.error;
+}
+
+export async function recordRateRevision(loan: LoanRow, latestRate: RateEventRow | null, input: RateRevisionInput) {
+  const spread = loan.benchmark_spread_percent === null ? null : Number(loan.benchmark_spread_percent);
+  const benchmark = latestRate?.lender_benchmark_rate === null || latestRate?.lender_benchmark_rate === undefined
+    ? null
+    : Number(latestRate.lender_benchmark_rate);
+
+  const created = await supabase
+    .from("rate_events")
+    .insert({
+      loan_id: loan.id,
+      effective_date: input.effectiveDate,
+      rbi_repo_rate: latestRate?.rbi_repo_rate ?? null,
+      lender_benchmark_rate: benchmark,
+      benchmark_spread_percent: spread,
+      expected_loan_rate: benchmark !== null && spread !== null ? benchmark + spread : null,
+      actual_applied_rate: input.newRate,
+      notes: ["Rate revision recorded from the lender's notice or statement.", input.note].filter(Boolean).join(" "),
+    })
+    .select("id")
+    .single();
+
+  if (created.error) throw created.error;
+
+  const loanResult = await supabase
+    .from("loans")
+    .update({ current_interest_rate: input.newRate })
+    .eq("id", loan.id);
+
+  if (loanResult.error) {
+    await supabase.from("rate_events").delete().eq("id", created.data.id);
+    throw loanResult.error;
+  }
+}
+
+export async function exportLoanData(loanId: string) {
+  const [loan, schedules, installments, payments, rateEvents, documents] = await Promise.all([
+    supabase.from("loans").select("*").eq("id", loanId).single(),
+    supabase.from("schedule_versions").select("*").eq("loan_id", loanId).order("version_number"),
+    supabase
+      .from("installments")
+      .select("*, schedule_versions!inner(loan_id, version_number)")
+      .eq("schedule_versions.loan_id", loanId)
+      .order("due_date"),
+    supabase.from("payments").select("*").eq("loan_id", loanId).order("payment_date"),
+    supabase.from("rate_events").select("*").eq("loan_id", loanId).order("created_at"),
+    supabase.from("documents").select("*").eq("loan_id", loanId).order("uploaded_at"),
+  ]);
+
+  for (const result of [loan, schedules, installments, payments, rateEvents, documents]) {
+    if (result.error) throw result.error;
+  }
+
+  return {
+    exportedAt: new Date().toISOString(),
+    loan: loan.data,
+    scheduleVersions: schedules.data ?? [],
+    installments: (installments.data ?? []).map(({ schedule_versions: version, ...row }) => ({
+      ...row,
+      schedule_version_number: (version as { version_number?: number } | null)?.version_number ?? null,
+    })),
+    payments: payments.data ?? [],
+    rateEvents: rateEvents.data ?? [],
+    documents: documents.data ?? [],
   };
 }

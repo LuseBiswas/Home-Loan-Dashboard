@@ -27,3 +27,35 @@ export async function refreshOfficialRates(loanId: string, accessToken: string) 
 
   return body as OfficialRateRefresh;
 }
+
+const RATE_CHECK_THROTTLE_MS = 6 * 60 * 60 * 1_000;
+
+function rateCheckKey(loanId: string) {
+  return `official-rate-check:${loanId}`;
+}
+
+export function isRateCheckDue(loanId: string) {
+  try {
+    const lastChecked = Number(window.localStorage.getItem(rateCheckKey(loanId)) ?? 0);
+    return Date.now() - lastChecked >= RATE_CHECK_THROTTLE_MS;
+  } catch {
+    return true;
+  }
+}
+
+export function markRateChecked(loanId: string) {
+  try {
+    window.localStorage.setItem(rateCheckKey(loanId), String(Date.now()));
+  } catch {
+    // Storage can be unavailable in private windows; the check simply runs again next time.
+  }
+}
+
+// Forces a fresh official-rate check on the next dashboard visit, e.g. after loan terms change.
+export function clearRateCheck(loanId: string) {
+  try {
+    window.localStorage.removeItem(rateCheckKey(loanId));
+  } catch {
+    // Nothing to clear when storage is unavailable.
+  }
+}
