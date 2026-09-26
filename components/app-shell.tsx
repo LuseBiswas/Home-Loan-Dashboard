@@ -1,25 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Bell, CalendarDays, FileText, Gauge, Landmark, LayoutDashboard, Menu, Percent, ShieldCheck, UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfileMenu } from "@/components/profile-menu";
 
-export type AppSection = "overview" | "profile";
-
-const navItems: { label: string; icon: typeof LayoutDashboard; href?: string; section?: AppSection }[] = [
-  { label: "Overview", icon: LayoutDashboard, href: "/", section: "overview" },
+const navItems: { label: string; icon: typeof LayoutDashboard; href?: string }[] = [
+  { label: "Overview", icon: LayoutDashboard, href: "/" },
   { label: "Schedule", icon: CalendarDays },
   { label: "Simulator", icon: Gauge },
   { label: "Rate watch", icon: Percent },
   { label: "Documents", icon: FileText },
-  { label: "Profile", icon: UserRound, href: "/profile", section: "profile" },
+  { label: "Profile", icon: UserRound, href: "/profile" },
 ];
 
 type AppShellProps = {
-  active: AppSection;
   lenderName: string;
   loanReference: string | null;
   userEmail: string;
@@ -27,11 +25,12 @@ type AppShellProps = {
   children: React.ReactNode;
 };
 
-export function AppShell({ active, lenderName, loanReference, userEmail, onSignOut, children }: AppShellProps) {
+export function AppShell({ lenderName, loanReference, userEmail, onSignOut, children }: AppShellProps) {
+  const pathname = usePathname();
   return (
     <main className="min-h-screen bg-[#f4f7f6] text-[#10201d]">
       <div className="mx-auto flex min-h-screen max-w-[1600px]">
-        <aside className="hidden w-[244px] shrink-0 border-r border-[#dce5e2] bg-[#0d2824] px-5 py-7 text-white lg:flex lg:flex-col">
+        <aside className="sticky top-0 hidden h-dvh w-[244px] shrink-0 self-start overflow-y-auto border-r border-[#dce5e2] bg-[#0d2824] px-5 py-7 text-white lg:flex lg:flex-col">
           <div className="flex items-center gap-3 px-2">
             <div className="grid size-10 place-items-center rounded-xl bg-[#d9f99d] text-[#173d35]">
               <Landmark className="size-5" strokeWidth={2.3} />
@@ -42,8 +41,8 @@ export function AppShell({ active, lenderName, loanReference, userEmail, onSignO
             </div>
           </div>
           <nav className="mt-10 space-y-1" aria-label="Primary navigation">
-            {navItems.map(({ label, icon: Icon, href, section }) => {
-              const isActive = section === active;
+            {navItems.map(({ label, icon: Icon, href }) => {
+              const isActive = href === "/" ? pathname === "/" : Boolean(href && pathname.startsWith(href));
               const className = `flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition ${isActive ? "bg-white/12 text-white" : "text-[#9ec0b8] hover:bg-white/7 hover:text-white"}`;
               return href ? (
                 <Link key={label} href={href} className={className} aria-current={isActive ? "page" : undefined}>
@@ -63,7 +62,7 @@ export function AppShell({ active, lenderName, loanReference, userEmail, onSignO
         </aside>
 
         <section className="min-w-0 flex-1">
-          <header className="flex h-[76px] items-center justify-between border-b border-[#dce5e2] bg-white/85 px-5 backdrop-blur md:px-8 xl:px-10">
+          <header className="sticky top-0 z-30 flex h-[76px] items-center justify-between border-b border-[#dce5e2] bg-white/85 px-5 backdrop-blur md:px-8 xl:px-10">
             <div className="flex items-center gap-3">
               <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open navigation"><Menu /></Button>
               <div>

@@ -183,7 +183,7 @@ export async function createLoanProfile(userId: string, input: LoanSetupInput) {
   }
 }
 
-export async function loadDashboardData(userId: string): Promise<DashboardData | null> {
+export async function loadPrimaryLoan(userId: string): Promise<LoanRow | null> {
   const loanResult = await supabase
     .from("loans")
     .select("*")
@@ -193,29 +193,30 @@ export async function loadDashboardData(userId: string): Promise<DashboardData |
     .maybeSingle();
 
   if (loanResult.error) throw loanResult.error;
-  if (!loanResult.data) return null;
+  return (loanResult.data ?? null) as LoanRow | null;
+}
 
-  const loan = loanResult.data as LoanRow;
+export async function loadDashboardDetails(loanId: string): Promise<Omit<DashboardData, "loan">> {
   const [installmentsResult, ratesResult, paymentsResult] = await Promise.all([
     supabase
       .from("installments")
       .select(
         "id, installment_number, installment_type, due_date, scheduled_amount, schedule_versions!inner(loan_id)",
       )
-      .eq("schedule_versions.loan_id", loan.id)
+      .eq("schedule_versions.loan_id", loanId)
       .order("due_date", { ascending: true }),
     supabase
       .from("rate_events")
       .select(
         "rbi_repo_rate, lender_benchmark_rate, expected_loan_rate, actual_applied_rate, verified_at, source_url",
       )
-      .eq("loan_id", loan.id)
+      .eq("loan_id", loanId)
       .order("created_at", { ascending: false })
       .limit(2),
     supabase
       .from("payments")
       .select("amount, payment_date, principal_component")
-      .eq("loan_id", loan.id)
+      .eq("loan_id", loanId)
       .order("payment_date", { ascending: false }),
   ]);
 
@@ -224,7 +225,6 @@ export async function loadDashboardData(userId: string): Promise<DashboardData |
   if (paymentsResult.error) throw paymentsResult.error;
 
   return {
-    loan,
     installments: (installmentsResult.data ?? []) as unknown as InstallmentRow[],
     latestRate: (ratesResult.data?.[0] ?? null) as RateEventRow | null,
     previousRate: (ratesResult.data?.[1] ?? null) as RateEventRow | null,
@@ -237,11 +237,6 @@ export type RateHistoryRow = RateEventRow & {
   effective_date: string;
   notes: string | null;
   created_at: string;
-};
-
-export type ProfileData = {
-  loan: LoanRow;
-  rateHistory: RateHistoryRow[];
 };
 
 export type LoanDetailsInput = {
@@ -265,28 +260,15 @@ export type RateRevisionInput = {
 const rateHistoryColumns =
   "id, effective_date, rbi_repo_rate, lender_benchmark_rate, expected_loan_rate, actual_applied_rate, verified_at, source_url, notes, created_at";
 
-export async function loadProfileData(userId: string): Promise<ProfileData | null> {
-  const loanResult = await supabase
-    .from("loans")
-    .select("*")
-    .eq("owner_id", userId)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (loanResult.error) throw loanResult.error;
-  if (!loanResult.data) return null;
-
-  const loan = loanResult.data as LoanRow;
+export async function loadRateHistory(loanId: string): Promise<RateHistoryRow[]> {
   const historyResult = await supabase
     .from("rate_events")
     .select(rateHistoryColumns)
-    .eq("loan_id", loan.id)
+    .eq("loan_id", loanId)
     .order("created_at", { ascending: false });
 
   if (historyResult.error) throw historyResult.error;
-
-  return { loan, rateHistory: (historyResult.data ?? []) as RateHistoryRow[] };
+  return (historyResult.data ?? []) as RateHistoryRow[];
 }
 
 export async function updateLoanDetails(loan: LoanRow, input: LoanDetailsInput) {

@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AppShell } from "@/components/app-shell";
 import { RateWatchStrip } from "@/components/rate-watch-strip";
 import type { DashboardData } from "@/lib/loan-service";
 
@@ -48,7 +47,7 @@ function calculateBalanceData(principal: number, annualRate: number, emi: number
   return points;
 }
 
-export function LoanDashboard({ data, userEmail, onSignOut, rateRefreshing, rateRefreshError, onRefreshRates }: { data: DashboardData; userEmail: string; onSignOut: () => void; rateRefreshing: boolean; rateRefreshError: string | null; onRefreshRates: () => void }) {
+export function LoanDashboard({ data, rateRefreshing, rateRefreshError, onRefreshRates }: { data: DashboardData; rateRefreshing: boolean; rateRefreshError: string | null; onRefreshRates: () => void }) {
   const { loan, installments, latestRate, previousRate, payments } = data;
   const now = new Date();
   const upcomingInstallment = installments.find((item) => new Date(`${item.due_date}T23:59:59`) >= now);
@@ -82,7 +81,7 @@ export function LoanDashboard({ data, userEmail, onSignOut, rateRefreshing, rate
     : `${loan.original_tenure_months}-month view`;
 
   return (
-    <AppShell active="overview" lenderName={loan.lender_name} loanReference={loan.loan_reference_masked} userEmail={userEmail} onSignOut={onSignOut}>
+    <>
       <RateWatchStrip
         benchmarkName={loan.benchmark_name}
         spread={loan.benchmark_spread_percent === null ? null : Number(loan.benchmark_spread_percent)}
@@ -163,7 +162,7 @@ export function LoanDashboard({ data, userEmail, onSignOut, rateRefreshing, rate
         <ActionCard icon={Sparkles} title="Test a prepayment" copy="See how an extra payment changes your tenure and total interest." action="Open simulator" />
         <ActionCard icon={FileText} title="Keep documents together" copy="Store statements, certificates and payment receipts privately." action="View documents" />
       </div>
-    </AppShell>
+    </>
   );
 }
 
