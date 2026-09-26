@@ -21,7 +21,6 @@ export function DashboardPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [rateRefreshing, setRateRefreshing] = useState(false);
   const [rateRefreshError, setRateRefreshError] = useState<string | null>(null);
-  const [refreshIndex, setRefreshIndex] = useState(0);
   const rateRefreshInFlight = useRef(false);
   const loanId = loan.id;
   const accessToken = session.access_token;
@@ -42,9 +41,7 @@ export function DashboardPage() {
     return () => {
       active = false;
     };
-  }, [loanId, refreshIndex]);
-
-  const reload = useCallback(() => setRefreshIndex((value) => value + 1), []);
+  }, [loanId]);
 
   const checkOfficialRates = useCallback(async () => {
     if (rateRefreshInFlight.current) return;
@@ -95,7 +92,6 @@ export function DashboardPage() {
       rateRefreshing={rateRefreshing}
       rateRefreshError={rateRefreshError}
       onRefreshRates={checkOfficialRates}
-      onDataChanged={reload}
     />
   );
 }

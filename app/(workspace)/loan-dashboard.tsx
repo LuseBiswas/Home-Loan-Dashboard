@@ -1,20 +1,16 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
 import {
   ArrowDownRight, ArrowUpRight, CalendarDays, CheckCircle2, ChevronRight,
-  FileText, IndianRupee, Percent, Sparkles, TrendingDown, WalletCards,
+  FileText, IndianRupee, Percent, Sparkles, WalletCards,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RateWatchStrip } from "@/components/rate-watch-strip";
 import { NextInstallmentCard } from "@/components/next-installment-card";
-import { PrepaymentDialog } from "@/components/prepayment-dialog";
 import { RepaymentBreakdown } from "@/components/repayment-breakdown";
-import { isEmi, loanSchedule } from "@/lib/amortization";
+import { loanSchedule } from "@/lib/amortization";
 import type { DashboardData } from "@/lib/loan-service";
 
 const money = (value: number) => new Intl.NumberFormat("en-IN", {
@@ -29,7 +25,7 @@ const shortDate = (date: string) => new Intl.DateTimeFormat("en-IN", {
   day: "numeric", month: "short", year: "numeric",
 }).format(new Date(`${date}T00:00:00`));
 
-export function LoanDashboard({ data, rateRefreshing, rateRefreshError, onRefreshRates, onDataChanged }: { data: DashboardData; rateRefreshing: boolean; rateRefreshError: string | null; onRefreshRates: () => void; onDataChanged: () => void }) {
+export function LoanDashboard({ data, rateRefreshing, rateRefreshError, onRefreshRates }: { data: DashboardData; rateRefreshing: boolean; rateRefreshError: string | null; onRefreshRates: () => void }) {
   const { loan, installments, latestRate, previousRate, revisions } = data;
   const now = new Date();
   const upcomingInstallment = installments.find((item) => new Date(`${item.due_date}T23:59:59`) >= now);
@@ -41,11 +37,6 @@ export function LoanDashboard({ data, rateRefreshing, rateRefreshError, onRefres
   const lastPaidRow = [...schedule].reverse().find((row) => row.dueDate < todayIso);
   const outstandingPrincipal = lastPaidRow ? lastPaidRow.closing : financed;
   const principalPaid = Math.max(0, financed - outstandingPrincipal);
-  const repaidPercent = financed > 0 ? (principalPaid / financed) * 100 : 0;
-  const totalPrepaid = revisions.reduce((sum, revision) => sum + revision.amount, 0);
-  const emiRows = schedule.filter(isEmi);
-  const firstRow = emiRows[0];
-  const lastRow = emiRows.at(-1);
   const todayLabel = new Intl.DateTimeFormat("en-IN", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   }).format(now);
@@ -85,19 +76,6 @@ export function LoanDashboard({ data, rateRefreshing, rateRefreshError, onRefres
       <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.75fr)]">
         <RepaymentBreakdown rows={schedule} principal={Number(loan.total_financed_amount)} annualRate={rate} />
         <NextInstallmentCard rows={schedule} upcoming={upcomingInstallment} />
-      </div>
-
-      <div className="mt-4 grid gap-4 lg:grid-cols-3">
-        <Card className="border-[#cfe4dc] bg-[#f3faf7] shadow-none lg:col-span-2">
-          <CardContent className="flex flex-col gap-4 px-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#dcefe8] text-[#0f766e]"><CheckCircle2 className="size-5" /></div><div><p className="font-semibold text-[#173d35]">{revisions.length > 0 ? "Schedule revised after prepayments" : "Repayment schedule loaded"}</p><p className="mt-1 text-sm leading-6 text-[#587069]">{revisions.length > 0 ? `You've prepaid ${money(totalPrepaid)}. ` : firstRow ? `Your ${money(firstRow.emi)} monthly EMI begins on ${shortDate(firstRow.dueDate)}. ` : "Add your EMI start date to build your schedule. "}{lastRow ? `${emiRows.length} EMIs in total, the last on ${shortDate(lastRow.dueDate)}.` : ""}</p></div></div>
-            <div className="flex shrink-0 gap-2">
-              <PrepaymentDialog loan={loan} annualRate={rate} revisions={revisions} onSaved={onDataChanged} trigger={<Button variant="outline" className="border-[#bfd8cf] bg-white text-[#173d35]">Record prepayment</Button>} />
-              <Button asChild variant="outline" className="border-[#bfd8cf] bg-white text-[#173d35]"><Link href="/schedule">View schedule</Link></Button>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-[#dce5e2] bg-white shadow-none"><CardContent className="px-5"><div className="flex items-center justify-between"><div><p className="text-sm text-[#6a7f79]">Principal repaid</p><p className="mt-1 text-2xl font-semibold">{repaidPercent.toFixed(1)}%</p></div><div className="grid size-10 place-items-center rounded-xl bg-[#edf6f3] text-[#0f766e]"><TrendingDown className="size-5" /></div></div><Progress value={repaidPercent} className="mt-5 h-2 bg-[#e4ecea] [&_[data-slot=progress-indicator]]:bg-[#0f766e]" /><p className="mt-3 text-xs text-[#6a7f79]">{totalPrepaid > 0 ? `Includes ${money(totalPrepaid)} prepaid. ` : ""}Assumes every EMI is paid on its due date.</p></CardContent></Card>
       </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
