@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Landmark, LoaderCircle, ShieldCheck } from "lucide-react";
+import { Landmark, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,7 @@ export function AuthScreen() {
   return (
     <main className="grid min-h-screen place-items-center bg-[#f4f7f6] px-5 py-10 text-[#10201d]">
       <Card className="w-full max-w-md border-[#dce5e2] bg-white shadow-[0_24px_80px_rgba(20,50,44,0.10)]">
-        <CardHeader className="items-center text-center">
+        <CardHeader className="justify-items-center text-center">
           <div className="grid size-12 place-items-center rounded-2xl bg-[#d9f99d] text-[#173d35]">
             <Landmark className="size-6" />
           </div>
@@ -67,10 +67,6 @@ export function AuthScreen() {
           <button type="button" className="mt-5 w-full cursor-pointer text-sm font-semibold text-[#0f766e]" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setMessage(null); }}>
             {mode === "signin" ? "Create your account" : "Already have an account? Sign in"}
           </button>
-          <div className="mt-6 flex items-start gap-2 border-t border-[#e6ecea] pt-5 text-xs leading-5 text-[#6a7f79]">
-            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-[#0f766e]" />
-            Your records are protected by Supabase authentication and row-level security.
-          </div>
         </CardContent>
       </Card>
     </main>
