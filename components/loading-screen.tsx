@@ -1,4 +1,4 @@
-import { Landmark, ShieldCheck } from "lucide-react";
+import { Landmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type LoadingProps = {
@@ -55,11 +55,6 @@ export function LoadingScreen({
         ) : null}
 
         <LoadingBar />
-
-        <p className="mt-10 flex items-center gap-1.5 text-xs text-[#6a7f79]">
-          <ShieldCheck className="size-3.5 text-[#0f766e]" aria-hidden="true" />
-          Your records stay private to your account
-        </p>
       </div>
     </main>
   );

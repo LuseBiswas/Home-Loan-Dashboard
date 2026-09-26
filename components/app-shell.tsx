@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bell, CalendarDays, FileText, Gauge, Landmark, LayoutDashboard, Menu, ShieldCheck, UserRound,
+  Bell, CalendarDays, FileText, Gauge, Landmark, LayoutDashboard, Menu, UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfileMenu } from "@/components/profile-menu";
@@ -56,10 +56,6 @@ export function AppShell({ lenderName, loanReference, userEmail, onSignOut, chil
               );
             })}
           </nav>
-          <div className="mt-auto rounded-2xl border border-white/10 bg-white/6 p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold"><ShieldCheck className="size-4 text-[#d9f99d]" />Private workspace</div>
-            <p className="mt-2 text-xs leading-5 text-[#9ec0b8]">Identifiers are masked. Only approved viewers can open this dashboard.</p>
-          </div>
         </aside>
 
         <section className="min-w-0 flex-1">

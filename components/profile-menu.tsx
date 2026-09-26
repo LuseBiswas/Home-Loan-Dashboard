@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, Landmark, LogOut, ShieldCheck, UserRound } from "lucide-react";
+import { ChevronDown, Landmark, LogOut, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -51,11 +51,6 @@ export function ProfileMenu({ userEmail, lenderName, loanReference, onSignOut }:
             <p className="truncate text-xs text-[#6a7f79]">Loan {loanReference ?? "reference unavailable"}</p>
           </div>
         </div>
-
-        <p className="flex items-center gap-1.5 px-3 pt-3 pb-1 text-xs text-[#6a7f79]">
-          <ShieldCheck className="size-3.5 text-[#0f766e]" />
-          Your records stay private to your account
-        </p>
 
         <DropdownMenuSeparator className="mx-1 my-2 bg-[#e5ece9]" />
 
