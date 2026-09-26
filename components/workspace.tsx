@@ -67,14 +67,29 @@ export function Workspace({ children }: { children: React.ReactNode }) {
     void supabase.auth.signOut();
   }, []);
 
-  if (!ready) return <LoadingScreen label="Opening your workspace…" detail="Checking your secure sign-in." />;
+  // The loader stays up until its count reaches 100%, so start-up ends on a full fill rather
+  // than vanishing mid-count; it shows again after signing in while the loan loads.
+  const booting = !ready || (Boolean(session) && !loanLoaded);
+  const [loaderVisible, setLoaderVisible] = useState(true);
+  if (booting && !loaderVisible) setLoaderVisible(true);
+  const hideLoader = useCallback(() => setLoaderVisible(false), []);
+
+  if (loaderVisible) {
+    return (
+      <LoadingScreen
+        label={ready && session ? "Preparing your loan dashboard…" : "Opening your workspace…"}
+        detail={ready && session ? "Fetching your balance, EMI schedule and rate checks." : "Checking your secure sign-in."}
+        done={!booting}
+        onFinished={hideLoader}
+      />
+    );
+  }
+
   if (!session) return <AuthScreen />;
 
   if (loadError) {
     return <StatusScreen title="We couldn't load your loan details." detail={loadError} actionLabel="Sign out" onAction={signOut} />;
   }
-
-  if (!loanLoaded) return <LoadingScreen label="Preparing your loan dashboard…" detail="Fetching your balance, EMI schedule and rate checks." />;
 
   if (!loan) return <LoanSetup userId={session.user.id} onCreated={refreshLoan} onSignOut={signOut} />;
 

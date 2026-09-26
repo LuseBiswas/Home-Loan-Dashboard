@@ -62,7 +62,7 @@ export function ProfileApp() {
           ) : history?.loanId === loanId ? (
             <RateRevisionCard loan={loan} history={history.rows} onSaved={reload} />
           ) : (
-            <ContentLoading label="Loading rate history…" className="min-h-64 rounded-xl border border-[#dce5e2] bg-white" />
+            <ContentLoading compact label="Loading rate history…" className="rounded-xl border border-[#dce5e2] bg-white" />
           )}
         </div>
         <div className="min-w-0 space-y-4">
