@@ -1,3 +1,4 @@
+import { assertNotDemo } from "@/lib/demo";
 import type { RateEventRow } from "@/lib/loan-service";
 
 export type OfficialRateRefresh = {
@@ -11,6 +12,7 @@ export type OfficialRateRefresh = {
 };
 
 export async function refreshOfficialRates(loanId: string, accessToken: string) {
+  assertNotDemo();
   const response = await fetch("/api/rates/refresh", {
     method: "POST",
     headers: {

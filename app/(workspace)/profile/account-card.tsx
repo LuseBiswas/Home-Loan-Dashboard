@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/lib/supabase/client";
 import { dateTime, errorMessage, Field, FormStatus, SectionHeading, shortDate, StatusMessage } from "./profile-ui";
+import { useDemoMode } from "@/lib/demo";
+import { DemoNote } from "@/components/demo-note";
 
 export function AccountCard({ user }: { user: User }) {
   const verified = Boolean(user.email_confirmed_at);
@@ -49,6 +51,7 @@ export function SecurityCard({ email }: { email: string }) {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<FormStatus>(null);
   const [signOutError, setSignOutError] = useState<string | null>(null);
+  const demo = useDemoMode();
 
   async function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -103,10 +106,11 @@ export function SecurityCard({ email }: { email: string }) {
           <Field label="New password" name="newPassword" type="password" autoComplete="new-password" minLength={8} required hint="At least 8 characters." />
           <Field label="Confirm new password" name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required />
           <StatusMessage status={status} />
-          <Button disabled={busy} className="w-full bg-[#173d35] text-white hover:bg-[#0d2824]">
+          <Button disabled={busy || demo} className="w-full bg-[#173d35] text-white hover:bg-[#0d2824]">
             {busy ? <LoaderCircle className="size-4 animate-spin" /> : null}
             Update password
           </Button>
+          <DemoNote />
         </form>
 
         <div className="mt-6 border-t border-[#e5ece9] pt-5">
@@ -114,7 +118,7 @@ export function SecurityCard({ email }: { email: string }) {
           <p className="mt-1 text-sm leading-6 text-[#6a7f79]">Ends every session, including other browsers and devices. Useful if you signed in on a shared computer.</p>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="outline" className="mt-3 w-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-700"><LogOut className="size-4" />Sign out of all devices</Button>
+              <Button variant="outline" disabled={demo} className="mt-3 w-full border-red-200 text-red-700 hover:bg-red-50 hover:text-red-700"><LogOut className="size-4" />Sign out of all devices</Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>

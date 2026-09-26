@@ -1,3 +1,5 @@
+import { assertNotDemo, isDemoMode } from "@/lib/demo";
+import { demoDocuments } from "@/lib/demo-data";
 import { supabase } from "@/lib/supabase/client";
 
 export const DOCUMENT_BUCKET = "loan-documents";
@@ -57,6 +59,7 @@ export function validateDocumentFile(file: File) {
 }
 
 export async function listDocuments(loanId: string): Promise<LoanDocument[]> {
+  if (isDemoMode()) return demoDocuments();
   const result = await supabase
     .from("documents")
     .select(documentColumns)
@@ -74,6 +77,7 @@ function safeFileName(name: string) {
 
 // Files live under the user's own folder, which the storage policies require.
 export async function uploadDocument({ userId, loanId, file, details }: { userId: string; loanId: string; file: File; details: DocumentDetails }) {
+  assertNotDemo();
   const invalid = validateDocumentFile(file);
   if (invalid) throw new Error(invalid);
 
@@ -100,6 +104,7 @@ export async function uploadDocument({ userId, loanId, file, details }: { userId
 }
 
 export async function updateDocument(id: string, details: DocumentDetails) {
+  assertNotDemo();
   const result = await supabase
     .from("documents")
     .update({
@@ -115,6 +120,7 @@ export async function updateDocument(id: string, details: DocumentDetails) {
 
 // Removes the record first so the document disappears for the user even if file cleanup fails.
 export async function deleteDocument(document: LoanDocument) {
+  assertNotDemo();
   const result = await supabase.from("documents").delete().eq("id", document.id);
   if (result.error) throw result.error;
 
@@ -124,6 +130,7 @@ export async function deleteDocument(document: LoanDocument) {
 
 // Short-lived private link; it stops working after a few minutes.
 export async function documentUrl(document: LoanDocument, { download = false }: { download?: boolean } = {}) {
+  if (isDemoMode()) throw new Error("Sample documents in the demo have no file to open.");
   const result = await supabase.storage
     .from(DOCUMENT_BUCKET)
     .createSignedUrl(document.storage_path, 300, download ? { download: document.file_name } : undefined);

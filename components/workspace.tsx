@@ -9,12 +9,16 @@ import { LoanSetup } from "@/components/loan-setup";
 import { StatusScreen } from "@/components/status-screen";
 import { loadPrimaryLoan, LoanRow } from "@/lib/loan-service";
 import { supabase } from "@/lib/supabase/client";
+import { exitDemo, useDemoMode } from "@/lib/demo";
+import { demoLoan, demoSession } from "@/lib/demo-data";
 import { useSupabaseSession } from "@/lib/use-supabase-session";
 
 type WorkspaceValue = {
   session: Session;
   loan: LoanRow;
   refreshLoan: () => void;
+  // True in demo mode: sample data, and every save is disabled.
+  demo: boolean;
 };
 
 const WorkspaceContext = createContext<WorkspaceValue | null>(null);
@@ -37,8 +41,12 @@ export function Workspace({ children }: { children: React.ReactNode }) {
     setLoan(null);
     setLoanLoaded(false);
   }, []);
-  const { session, ready } = useSupabaseSession(clearLoan);
-  const userId = session?.user.id;
+  const demo = useDemoMode();
+  const { session: realSession, ready: sessionReady } = useSupabaseSession(clearLoan);
+  // Demo mode swaps in a sample session and loan; the real session is left untouched.
+  const session = demo ? demoSession() : realSession;
+  const ready = demo || sessionReady;
+  const userId = demo ? undefined : session?.user.id;
 
   useEffect(() => {
     if (!userId) return;
@@ -64,12 +72,13 @@ export function Workspace({ children }: { children: React.ReactNode }) {
 
   const refreshLoan = useCallback(() => setRefreshIndex((value) => value + 1), []);
   const signOut = useCallback(() => {
-    void supabase.auth.signOut();
-  }, []);
+    if (demo) exitDemo();
+    else void supabase.auth.signOut();
+  }, [demo]);
 
   // The loader stays up until its count reaches 100%, so start-up ends on a full fill rather
   // than vanishing mid-count; it shows again after signing in while the loan loads.
-  const booting = !ready || (Boolean(session) && !loanLoaded);
+  const booting = !ready || (!demo && Boolean(session) && !loanLoaded);
   const [loaderVisible, setLoaderVisible] = useState(true);
   if (booting && !loaderVisible) setLoaderVisible(true);
   const hideLoader = useCallback(() => setLoaderVisible(false), []);
@@ -77,8 +86,8 @@ export function Workspace({ children }: { children: React.ReactNode }) {
   if (loaderVisible) {
     return (
       <LoadingScreen
-        label={ready && session ? "Preparing your loan dashboard…" : "Opening your workspace…"}
-        detail={ready && session ? "Fetching your balance, EMI schedule and rate checks." : "Checking your secure sign-in."}
+        label={demo ? "Opening the demo…" : ready && session ? "Preparing your loan dashboard…" : "Opening your workspace…"}
+        detail={demo ? "Loading a sample loan to explore." : ready && session ? "Fetching your balance, EMI schedule and rate checks." : "Checking your secure sign-in."}
         done={!booting}
         onFinished={hideLoader}
       />
@@ -87,15 +96,16 @@ export function Workspace({ children }: { children: React.ReactNode }) {
 
   if (!session) return <AuthScreen />;
 
-  if (loadError) {
+  if (loadError && !demo) {
     return <StatusScreen title="We couldn't load your loan details." detail={loadError} actionLabel="Sign out" onAction={signOut} />;
   }
 
-  if (!loan) return <LoanSetup userId={session.user.id} onCreated={refreshLoan} onSignOut={signOut} />;
+  const activeLoan = demo ? demoLoan() : loan;
+  if (!activeLoan) return <LoanSetup userId={session.user.id} onCreated={refreshLoan} onSignOut={signOut} />;
 
   return (
-    <WorkspaceContext.Provider value={{ session, loan, refreshLoan }}>
-      <AppShell lenderName={loan.lender_name} loanReference={loan.loan_reference_masked} userEmail={session.user.email ?? ""} onSignOut={signOut}>
+    <WorkspaceContext.Provider value={{ session, loan: activeLoan, refreshLoan, demo }}>
+      <AppShell lenderName={activeLoan.lender_name} loanReference={activeLoan.loan_reference_masked} userEmail={session.user.email ?? ""} onSignOut={signOut} demo={demo}>
         {children}
       </AppShell>
     </WorkspaceContext.Provider>

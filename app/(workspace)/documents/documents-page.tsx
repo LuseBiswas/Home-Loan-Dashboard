@@ -23,6 +23,7 @@ import { loadRateHistory } from "@/lib/loan-service";
 import { useScheduleRevisions } from "@/lib/use-schedule-revisions";
 import { cn } from "@/lib/utils";
 import { DocumentFormDialog, DocumentFormTarget } from "./document-form-dialog";
+import { useDemoMode } from "@/lib/demo";
 
 const shortDate = (date: string) => new Intl.DateTimeFormat("en-IN", {
   day: "numeric", month: "short", year: "numeric",
@@ -255,6 +256,7 @@ function FilterChip({ active, onClick, label, count }: { active: boolean; onClic
 }
 
 function DocumentRow({ document, onPreview, onDownload, onEdit, onDelete }: { document: LoanDocument; onPreview: () => void; onDownload: () => void; onEdit: () => void; onDelete: () => void }) {
+  const demo = useDemoMode();
   const isImage = document.mime_type?.startsWith("image/");
   const Icon = isImage ? FileImage : FileText;
   const meta = [periodText(document), formatSize(document.file_size_bytes), `Added ${shortDate(document.uploaded_at)}`].filter(Boolean).join(" · ");
@@ -272,15 +274,15 @@ function DocumentRow({ document, onPreview, onDownload, onEdit, onDelete }: { do
         <IconButton label={`Preview ${document.file_name}`} onClick={onPreview}><Eye /></IconButton>
         <IconButton label={`Download ${document.file_name}`} onClick={onDownload}><Download /></IconButton>
         <IconButton label={`Edit ${document.file_name}`} onClick={onEdit}><Pencil /></IconButton>
-        <IconButton label={`Delete ${document.file_name}`} onClick={onDelete} destructive><Trash2 /></IconButton>
+        <IconButton label={`Delete ${document.file_name}`} onClick={onDelete} destructive disabled={demo}><Trash2 /></IconButton>
       </div>
     </li>
   );
 }
 
-function IconButton({ label, onClick, destructive = false, children }: { label: string; onClick: () => void; destructive?: boolean; children: React.ReactNode }) {
+function IconButton({ label, onClick, destructive = false, disabled = false, children }: { label: string; onClick: () => void; destructive?: boolean; disabled?: boolean; children: React.ReactNode }) {
   return (
-    <Button type="button" variant="ghost" size="icon-sm" aria-label={label} title={label.split(" ")[0]} onClick={onClick} className={cn("text-[#587069]", destructive ? "hover:bg-red-50 hover:text-red-700" : "hover:bg-[#edf6f3] hover:text-[#173d35]")}>
+    <Button type="button" variant="ghost" size="icon-sm" aria-label={label} title={label.split(" ")[0]} onClick={onClick} disabled={disabled} className={cn("text-[#587069]", destructive ? "hover:bg-red-50 hover:text-red-700" : "hover:bg-[#edf6f3] hover:text-[#173d35]")}>
       {children}
     </Button>
   );

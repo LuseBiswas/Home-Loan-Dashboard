@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { CheckCircle2, Eye, EyeOff, FileCheck2, Landmark, LoaderCircle, PiggyBank } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff, FileCheck2, Landmark, LoaderCircle, PiggyBank, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { clearSignupRequest, enterDemo, signupRequestedFromDemo } from "@/lib/demo";
 import { supabase } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -10,7 +11,7 @@ export function AuthScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup">(() => (signupRequestedFromDemo() ? "signup" : "signin"));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "error" | "info"; text: string } | null>(null);
   const signingIn = mode === "signin";
@@ -29,6 +30,7 @@ export function AuthScreen() {
       setMessage({ tone: "error", text: result.error.message });
       return;
     }
+    clearSignupRequest();
 
     if (!signingIn && !result.data.session) {
       setMessage({ tone: "info", text: "Account created. Check your email to confirm it, then log in." });
@@ -106,6 +108,13 @@ export function AuthScreen() {
               {busy ? <LoaderCircle className="size-4 animate-spin" /> : null}
               {signingIn ? "Log in" : "Create account"}
             </Button>
+
+            <div className="flex items-center gap-3 text-xs text-[#9aaba6]" aria-hidden="true"><span className="h-px flex-1 bg-[#e5ece9]" />or<span className="h-px flex-1 bg-[#e5ece9]" /></div>
+
+            <Button type="button" variant="outline" onClick={enterDemo} className="h-[3.75rem] w-full rounded-full border-[#dce5e2] bg-[#f4f7f6] text-lg font-semibold text-[#173d35] hover:bg-[#edf6f3] hover:text-[#173d35]">
+              <Sparkles className="size-5 text-[#0f766e]" />Explore a demo loan
+            </Button>
+            <p className="-mt-5 text-center text-sm text-[#6a7f79]">See everything the app does with sample data. No account needed.</p>
           </form>
 
           <p className="mt-auto pt-10 text-center text-base text-[#6a7f79]">

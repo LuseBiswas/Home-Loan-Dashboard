@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bell, CalendarDays, FileText, Gauge, Landmark, LayoutDashboard, Menu, UserRound,
+  Bell, CalendarDays, FileText, Gauge, Landmark, LayoutDashboard, Menu, Sparkles, UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfileMenu } from "@/components/profile-menu";
+import { exitDemo } from "@/lib/demo";
 
 const navItems: { label: string; icon: typeof LayoutDashboard; href?: string }[] = [
   { label: "Overview", icon: LayoutDashboard, href: "/" },
@@ -23,10 +24,11 @@ type AppShellProps = {
   loanReference: string | null;
   userEmail: string;
   onSignOut: () => void;
+  demo?: boolean;
   children: React.ReactNode;
 };
 
-export function AppShell({ lenderName, loanReference, userEmail, onSignOut, children }: AppShellProps) {
+export function AppShell({ lenderName, loanReference, userEmail, onSignOut, demo = false, children }: AppShellProps) {
   const pathname = usePathname();
   return (
     <main className="min-h-screen bg-[#f4f7f6] text-[#10201d]">
@@ -73,9 +75,30 @@ export function AppShell({ lenderName, loanReference, userEmail, onSignOut, chil
             </div>
           </header>
 
-          <div className="px-5 py-7 md:px-8 xl:px-10 xl:py-9">{children}</div>
+          <div className="px-5 py-7 md:px-8 xl:px-10 xl:py-9">
+            {demo ? <DemoBanner /> : null}
+            {children}
+          </div>
         </section>
       </div>
     </main>
+  );
+}
+
+function DemoBanner() {
+  return (
+    <div className="mb-6 flex flex-col gap-3 rounded-2xl bg-[#102f2a] px-4 py-3 text-white sm:flex-row sm:items-center sm:justify-between md:px-5">
+      <div className="flex items-start gap-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#d9f99d] text-[#173d35]"><Sparkles className="size-4" /></span>
+        <div>
+          <p className="text-sm font-semibold">You&apos;re exploring a sample loan</p>
+          <p className="text-xs leading-5 text-[#c6d9d4]">Try anything: edit forms, run the simulator, open the schedule. Saving is turned off in the demo.</p>
+        </div>
+      </div>
+      <div className="flex shrink-0 gap-2">
+        <Button type="button" size="sm" className="bg-[#d9f99d] text-[#173d35] hover:bg-[#c9ee88]" onClick={() => exitDemo({ signup: true })}>Create your account</Button>
+        <Button type="button" size="sm" variant="outline" className="border-white/25 bg-transparent text-white hover:bg-white/10 hover:text-white" onClick={() => exitDemo()}>Exit demo</Button>
+      </div>
+    </div>
   );
 }

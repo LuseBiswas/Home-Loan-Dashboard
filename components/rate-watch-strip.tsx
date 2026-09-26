@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { RateEventRow } from "@/lib/loan-service";
+import { useDemoMode } from "@/lib/demo";
 
 const RBI_SOURCE = "https://m.rbi.org.in/scripts/faqview.aspx?id=130";
 const PNB_SOURCE = "https://www.pnbhousing.com/home-loan/interest-rates";
@@ -44,6 +45,7 @@ export function RateWatchStrip({
   onRefresh,
 }: RateWatchStripProps) {
   const [copied, setCopied] = useState(false);
+  const demo = useDemoMode();
   const expected = latest?.expected_loan_rate === null || latest?.expected_loan_rate === undefined
     ? null
     : Number(latest.expected_loan_rate);
@@ -135,7 +137,7 @@ export function RateWatchStrip({
           <a href={PNB_SOURCE} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-[#0f766e]">PNB source<ExternalLink className="size-3" /></a>
         </div>
         <div className="flex gap-2">
-          <Button type="button" size="sm" variant="outline" disabled={refreshing} onClick={onRefresh}>
+          <Button type="button" size="sm" variant="outline" disabled={refreshing || demo} onClick={onRefresh}>
             <RefreshCw className={`size-3.5 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Checking…" : "Check now"}
           </Button>

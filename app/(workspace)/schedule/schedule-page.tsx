@@ -16,6 +16,7 @@ import { groupByYear, isEmi, loanSchedule, ScheduleRevision, totalsOf, YearType 
 import { deletePrepayment } from "@/lib/loan-service";
 import { useScheduleRevisions } from "@/lib/use-schedule-revisions";
 import { cn } from "@/lib/utils";
+import { useDemoMode } from "@/lib/demo";
 
 const money = (value: number) => new Intl.NumberFormat("en-IN", {
   style: "currency", currency: "INR", maximumFractionDigits: 0,
@@ -176,6 +177,7 @@ export function SchedulePage() {
 
 function PrepaymentHistory({ revisions, onChanged }: { revisions: ScheduleRevision[]; onChanged: () => void }) {
   const [undoing, setUndoing] = useState(false);
+  const demo = useDemoMode();
   const [error, setError] = useState<string | null>(null);
   if (revisions.length === 0) return null;
 
@@ -216,7 +218,7 @@ function PrepaymentHistory({ revisions, onChanged }: { revisions: ScheduleRevisi
               {revision === latest ? (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button type="button" variant="outline" size="sm" disabled={undoing} className="shrink-0"><Undo2 className="size-3.5" />Undo</Button>
+                    <Button type="button" variant="outline" size="sm" disabled={undoing || demo} className="shrink-0"><Undo2 className="size-3.5" />Undo</Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>

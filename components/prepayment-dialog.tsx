@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { planPrepayment, PrepaymentPlan, ReduceOption, ScheduleRevision } from "@/lib/amortization";
 import { LoanRow, recordPrepayment } from "@/lib/loan-service";
 import { cn } from "@/lib/utils";
+import { useDemoMode } from "@/lib/demo";
+import { DemoNote } from "@/components/demo-note";
 
 const money = (value: number) => new Intl.NumberFormat("en-IN", {
   style: "currency", currency: "INR", maximumFractionDigits: 0,
@@ -49,6 +51,7 @@ export function PrepaymentDialog({ loan, annualRate, revisions, onSaved, trigger
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const demo = useDemoMode();
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const latestRevisionDate = revisions.at(-1)?.effectiveDate;
@@ -157,9 +160,10 @@ export function PrepaymentDialog({ loan, annualRate, revisions, onSaved, trigger
           <p className="text-xs leading-5 text-[#6a7f79]">Figures are estimates. Your lender may differ by a small amount because interest accrues daily between EMIs. Floating-rate home loans for individuals carry no prepayment charges under RBI rules.</p>
           {saveError ? <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{saveError}</p> : null}
 
-          <DialogFooter>
+          <DialogFooter className="sm:items-center">
+            <DemoNote className="sm:mr-auto" />
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" disabled={busy || !selected?.plan || Boolean(validationError)} className="bg-[#173d35] text-white hover:bg-[#0d2824]">
+            <Button type="submit" disabled={busy || demo || !selected?.plan || Boolean(validationError)} className="bg-[#173d35] text-white hover:bg-[#0d2824]">
               {busy ? <LoaderCircle className="size-4 animate-spin" /> : null}
               Save prepayment
             </Button>

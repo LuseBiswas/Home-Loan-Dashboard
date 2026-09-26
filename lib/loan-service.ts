@@ -1,4 +1,6 @@
 import type { AmortizationRow, PrepaymentPlan, ReduceOption, ScheduleRevision } from "@/lib/amortization";
+import { assertNotDemo, isDemoMode } from "@/lib/demo";
+import { demoDashboardDetails, demoLoan, demoRateHistory, demoRevisions } from "@/lib/demo-data";
 import { supabase } from "@/lib/supabase/client";
 
 export type LoanRow = {
@@ -89,6 +91,7 @@ function addMonthsIso(isoDate: string, monthsToAdd: number) {
 }
 
 export async function createLoanProfile(userId: string, input: LoanSetupInput) {
+  assertNotDemo();
   const createdLoan = await supabase
     .from("loans")
     .insert({
@@ -187,6 +190,7 @@ export async function createLoanProfile(userId: string, input: LoanSetupInput) {
 }
 
 export async function loadPrimaryLoan(userId: string): Promise<LoanRow | null> {
+  if (isDemoMode()) return demoLoan();
   const loanResult = await supabase
     .from("loans")
     .select("*")
@@ -200,6 +204,7 @@ export async function loadPrimaryLoan(userId: string): Promise<LoanRow | null> {
 }
 
 export async function loadDashboardDetails(loanId: string): Promise<Omit<DashboardData, "loan">> {
+  if (isDemoMode()) return demoDashboardDetails();
   const [installmentsResult, ratesResult, paymentsResult, revisions] = await Promise.all([
     supabase
       .from("installments")
@@ -251,6 +256,7 @@ type VersionRow = {
 // Schedule revisions created by prepayments, oldest first. A revision that kept the previous
 // EMI shortened the tenure; one with a new EMI kept the tenure.
 export async function loadScheduleRevisions(loanId: string): Promise<ScheduleRevision[]> {
+  if (isDemoMode()) return demoRevisions();
   const result = await supabase
     .from("schedule_versions")
     .select(
@@ -307,6 +313,7 @@ export async function recordPrepayment(loanId: string, annualRate: number, input
   // EMI stored on the current schedule version; kept as-is when the tenure is reduced.
   currentEmi: number;
 }, plan: PrepaymentPlan) {
+  assertNotDemo();
   const result = await supabase.rpc("record_prepayment", {
     p_loan_id: loanId,
     p_payment_date: input.date,
@@ -323,6 +330,7 @@ export async function recordPrepayment(loanId: string, annualRate: number, input
 }
 
 export async function deletePrepayment(paymentId: string) {
+  assertNotDemo();
   const result = await supabase.rpc("delete_prepayment", { p_payment_id: paymentId });
   if (result.error) throw result.error;
 }
@@ -356,6 +364,7 @@ const rateHistoryColumns =
   "id, effective_date, rbi_repo_rate, lender_benchmark_rate, expected_loan_rate, actual_applied_rate, verified_at, source_url, notes, created_at";
 
 export async function loadRateHistory(loanId: string): Promise<RateHistoryRow[]> {
+  if (isDemoMode()) return demoRateHistory();
   const historyResult = await supabase
     .from("rate_events")
     .select(rateHistoryColumns)
@@ -367,6 +376,7 @@ export async function loadRateHistory(loanId: string): Promise<RateHistoryRow[]>
 }
 
 export async function updateLoanDetails(loan: LoanRow, input: LoanDetailsInput) {
+  assertNotDemo();
   const result = await supabase
     .from("loans")
     .update({
@@ -414,6 +424,7 @@ export async function updateLoanDetails(loan: LoanRow, input: LoanDetailsInput) 
 }
 
 export async function recordRateRevision(loan: LoanRow, latestRate: RateEventRow | null, input: RateRevisionInput) {
+  assertNotDemo();
   const spread = loan.benchmark_spread_percent === null ? null : Number(loan.benchmark_spread_percent);
   const benchmark = latestRate?.lender_benchmark_rate === null || latestRate?.lender_benchmark_rate === undefined
     ? null
@@ -448,6 +459,7 @@ export async function recordRateRevision(loan: LoanRow, latestRate: RateEventRow
 }
 
 export async function exportLoanData(loanId: string) {
+  assertNotDemo();
   const [loan, schedules, installments, payments, rateEvents, documents] = await Promise.all([
     supabase.from("loans").select("*").eq("id", loanId).single(),
     supabase.from("schedule_versions").select("*").eq("loan_id", loanId).order("version_number"),

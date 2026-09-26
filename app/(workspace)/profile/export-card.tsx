@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { exportLoanData } from "@/lib/loan-service";
 import { downloadFile, toCsv } from "@/lib/download";
 import { errorMessage, FormStatus, SectionHeading, StatusMessage } from "./profile-ui";
+import { useDemoMode } from "@/lib/demo";
+import { DemoNote } from "@/components/demo-note";
 
 type ExportKind = "json" | "rates" | "schedule" | "payments";
 
@@ -20,6 +22,7 @@ const exports: { kind: ExportKind; label: string; detail: string; icon: typeof F
 export function ExportCard({ loanId }: { loanId: string }) {
   const [busy, setBusy] = useState<ExportKind | null>(null);
   const [status, setStatus] = useState<FormStatus>(null);
+  const demo = useDemoMode();
 
   async function download(kind: ExportKind) {
     setBusy(kind);
@@ -67,7 +70,7 @@ export function ExportCard({ loanId }: { loanId: string }) {
               key={kind}
               type="button"
               variant="outline"
-              disabled={busy !== null}
+              disabled={busy !== null || demo}
               onClick={() => download(kind)}
               className="h-auto justify-between border-[#dce5e2] px-3 py-2.5 hover:bg-[#f3faf7] hover:text-[#10201d]"
             >
@@ -79,7 +82,7 @@ export function ExportCard({ loanId }: { loanId: string }) {
             </Button>
           ))}
         </div>
-        <div className="mt-3"><StatusMessage status={status} /></div>
+        <div className="mt-3 space-y-2"><StatusMessage status={status} /><DemoNote /></div>
         <p className="mt-3 text-xs leading-5 text-[#6a7f79]">The backup lists your documents but doesn&apos;t include the files themselves.</p>
       </CardContent>
     </Card>

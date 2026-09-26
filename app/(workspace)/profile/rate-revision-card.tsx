@@ -7,6 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LoanRow, RateHistoryRow, recordRateRevision } from "@/lib/loan-service";
 import { clearRateCheck } from "@/lib/rate-monitor";
 import { errorMessage, Field, FormStatus, percent, SectionHeading, shortDate, StatusMessage } from "./profile-ui";
+import { useDemoMode } from "@/lib/demo";
+import { DemoNote } from "@/components/demo-note";
 
 function todayIso() {
   const now = new Date();
@@ -16,6 +18,7 @@ function todayIso() {
 export function RateRevisionCard({ loan, history, onSaved }: { loan: LoanRow; history: RateHistoryRow[]; onSaved: () => void }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [busy, setBusy] = useState(false);
+  const demo = useDemoMode();
   const [status, setStatus] = useState<FormStatus>(null);
   const currentRate = Number(loan.current_interest_rate);
 
@@ -62,12 +65,12 @@ export function RateRevisionCard({ loan, history, onSaved }: { loan: LoanRow; hi
           <Field label="New applied rate (%)" name="newRate" type="number" min="0" max="100" step="0.0001" required />
           <Field label="Effective from" name="effectiveDate" type="date" defaultValue={todayIso()} max={todayIso()} required />
           <Field label="Note (optional)" name="note" placeholder="e.g. Rate revision letter dated…" />
-          <Button disabled={busy} className="bg-[#173d35] text-white hover:bg-[#0d2824]">
+          <Button disabled={busy || demo} className="bg-[#173d35] text-white hover:bg-[#0d2824]">
             {busy ? <LoaderCircle className="size-4 animate-spin" /> : null}
             Record revision
           </Button>
         </form>
-        <div className="mt-3"><StatusMessage status={status} /></div>
+        <div className="mt-3 space-y-2"><StatusMessage status={status} /><DemoNote /></div>
         <p className="mt-3 text-xs leading-5 text-[#6a7f79]">Use the rate on your statement or revision notice, not the lender&apos;s advertised rate.</p>
 
         <div className="mt-6 border-t border-[#e5ece9] pt-5">

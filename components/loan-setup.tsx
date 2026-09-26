@@ -1,10 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { Landmark, LoaderCircle, LogOut, ShieldCheck } from "lucide-react";
+import { Landmark, LoaderCircle, LogOut, ShieldCheck, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { enterDemo } from "@/lib/demo";
 import { createLoanProfile } from "@/lib/loan-service";
 
 function nullableNumber(value: FormDataEntryValue | null) {
@@ -58,7 +59,7 @@ export function LoanSetup({ userId, onCreated, onSignOut }: { userId: string; on
             <div className="grid size-11 place-items-center rounded-2xl bg-[#d9f99d] text-[#173d35]"><Landmark className="size-5" /></div>
             <div><p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#6a7f79]">Home Loan Compass</p><h1 className="text-xl font-semibold">Create your loan profile</h1></div>
           </div>
-          <Button type="button" variant="outline" onClick={onSignOut}><LogOut className="size-4" />Sign out</Button>
+          <div className="flex gap-2"><Button type="button" variant="outline" onClick={enterDemo}><Sparkles className="size-4" />Explore a demo first</Button><Button type="button" variant="outline" onClick={onSignOut}><LogOut className="size-4" />Sign out</Button></div>
         </div>
 
         <form onSubmit={submit}>

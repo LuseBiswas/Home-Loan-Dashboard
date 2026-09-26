@@ -13,7 +13,7 @@ type DashboardDetails = Omit<DashboardData, "loan">;
 const detailsCache = new Map<string, DashboardDetails>();
 
 export function DashboardPage() {
-  const { session, loan } = useWorkspace();
+  const { session, loan, demo } = useWorkspace();
   const [details, setDetails] = useState<{ loanId: string; value: DashboardDetails } | null>(() => {
     const cached = detailsCache.get(loan.id);
     return cached ? { loanId: loan.id, value: cached } : null;
@@ -69,14 +69,14 @@ export function DashboardPage() {
   const detailsReady = details?.loanId === loanId;
 
   useEffect(() => {
-    if (!detailsReady || !isRateCheckDue(loanId)) return;
+    if (demo || !detailsReady || !isRateCheckDue(loanId)) return;
 
     const refreshTimer = window.setTimeout(() => {
       void checkOfficialRates();
     }, 0);
 
     return () => window.clearTimeout(refreshTimer);
-  }, [checkOfficialRates, detailsReady, loanId]);
+  }, [checkOfficialRates, demo, detailsReady, loanId]);
 
   if (loadError) {
     return <p className="rounded-xl bg-red-50 p-4 text-sm leading-6 text-red-700">We couldn&apos;t load your dashboard. {loadError}</p>;

@@ -12,6 +12,8 @@ import {
   DOCUMENT_CATEGORIES, DocumentCategory, DocumentDetails, LoanDocument, updateDocument, uploadDocument, validateDocumentFile,
 } from "@/lib/document-service";
 import { cn } from "@/lib/utils";
+import { useDemoMode } from "@/lib/demo";
+import { DemoNote } from "@/components/demo-note";
 
 const selectClassName = "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
@@ -62,6 +64,7 @@ function DocumentForm({ target, onClose, onSaved, userId, loanId, financialYears
   const [rangeStart, setRangeStart] = useState(editing?.statement_period_start ?? "");
   const [rangeEnd, setRangeEnd] = useState(editing?.statement_period_end ?? "");
   const [busy, setBusy] = useState(false);
+  const demo = useDemoMode();
   const [error, setError] = useState<string | null>(null);
 
   const period = DOCUMENT_CATEGORIES.find((item) => item.value === category)?.period ?? null;
@@ -178,9 +181,10 @@ function DocumentForm({ target, onClose, onSaved, userId, loanId, financialYears
           <p className="flex items-start gap-2 text-xs leading-5 text-[#6a7f79]"><ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-[#0f766e]" />Loan papers include your name, address and account details. Only you can open them, through links that expire after a few minutes.</p>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="sm:items-center">
+          <DemoNote className="sm:mr-auto" />
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" disabled={busy} className="bg-[#173d35] text-white hover:bg-[#0d2824]">
+          <Button type="submit" disabled={busy || demo} className="bg-[#173d35] text-white hover:bg-[#0d2824]">
             {busy ? <LoaderCircle className="size-4 animate-spin" /> : null}
             {editing ? "Save changes" : "Upload"}
           </Button>

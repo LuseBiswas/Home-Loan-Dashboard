@@ -10,6 +10,8 @@ import { clearRateCheck } from "@/lib/rate-monitor";
 import {
   errorMessage, Field, FormStatus, money, percent, ReadOnlyValue, SectionHeading, selectClassName, shortDate, StatusMessage,
 } from "./profile-ui";
+import { useDemoMode } from "@/lib/demo";
+import { DemoNote } from "@/components/demo-note";
 
 function nullableNumber(value: FormDataEntryValue | null) {
   if (typeof value !== "string" || value.trim() === "") return null;
@@ -18,6 +20,7 @@ function nullableNumber(value: FormDataEntryValue | null) {
 
 export function LoanDetailsCard({ loan, onSaved }: { loan: LoanRow; onSaved: () => void }) {
   const [busy, setBusy] = useState(false);
+  const demo = useDemoMode();
   const [status, setStatus] = useState<FormStatus>(null);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -86,8 +89,8 @@ export function LoanDetailsCard({ loan, onSaved }: { loan: LoanRow; onSaved: () 
           </div>
 
           <div className="flex flex-col gap-3 border-t border-[#e5ece9] pt-5 md:col-span-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0 flex-1"><StatusMessage status={status} /></div>
-            <Button disabled={busy} className="bg-[#173d35] text-white hover:bg-[#0d2824]">
+            <div className="min-w-0 flex-1"><StatusMessage status={status} /><DemoNote /></div>
+            <Button disabled={busy || demo} className="bg-[#173d35] text-white hover:bg-[#0d2824]">
               {busy ? <LoaderCircle className="size-4 animate-spin" /> : null}
               Save changes
             </Button>
