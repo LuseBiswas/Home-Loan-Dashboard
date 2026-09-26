@@ -4,18 +4,13 @@ import {
   ArrowDownRight, ArrowUpRight, CalendarDays, CheckCircle2, ChevronRight,
   FileText, IndianRupee, Percent, Sparkles, TrendingDown, WalletCards,
 } from "lucide-react";
-import { Area, AreaChart, CartesianGrid, ReferenceDot, XAxis, YAxis } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RateWatchStrip } from "@/components/rate-watch-strip";
+import { RepaymentBreakdown } from "@/components/repayment-breakdown";
 import type { DashboardData } from "@/lib/loan-service";
-
-const chartConfig = {
-  balance: { label: "Outstanding", color: "#0f766e" },
-} satisfies ChartConfig;
 
 const money = (value: number) => new Intl.NumberFormat("en-IN", {
   style: "currency", currency: "INR", maximumFractionDigits: 0,
@@ -28,24 +23,6 @@ const displayDate = (date: string) => new Intl.DateTimeFormat("en-IN", {
 const shortDate = (date: string) => new Intl.DateTimeFormat("en-IN", {
   day: "numeric", month: "short", year: "numeric",
 }).format(new Date(`${date}T00:00:00`));
-
-function calculateBalanceData(principal: number, annualRate: number, emi: number, months: number, startYear: number) {
-  const monthlyRate = annualRate / 1200;
-  let balance = principal;
-  const points = [{ year: String(startYear), balance: Number((balance / 100_000).toFixed(1)) }];
-
-  for (let month = 1; month <= months; month += 1) {
-    balance = Math.max(0, balance * (1 + monthlyRate) - emi);
-    if (month % 60 === 0 || month === months) {
-      points.push({
-        year: String(startYear + Math.ceil(month / 12)),
-        balance: Number((balance / 100_000).toFixed(1)),
-      });
-    }
-  }
-
-  return points;
-}
 
 export function LoanDashboard({ data, rateRefreshing, rateRefreshError, onRefreshRates }: { data: DashboardData; rateRefreshing: boolean; rateRefreshError: string | null; onRefreshRates: () => void }) {
   const { loan, installments, latestRate, previousRate, payments } = data;
@@ -62,23 +39,9 @@ export function LoanDashboard({ data, rateRefreshing, rateRefreshError, onRefres
   const daysUntilDue = upcomingInstallment
     ? Math.max(0, Math.ceil((new Date(`${upcomingInstallment.due_date}T00:00:00`).getTime() - new Date(new Date().toDateString()).getTime()) / 86_400_000))
     : 0;
-  const scheduleStartDate = loan.regular_emi_start_date ?? loan.first_installment_date;
-  const chartStartYear = scheduleStartDate
-    ? new Date(`${scheduleStartDate}T00:00:00`).getFullYear()
-    : now.getFullYear();
-  const balanceData = calculateBalanceData(
-    outstandingPrincipal,
-    rate,
-    Number(loan.regular_emi_amount),
-    loan.original_tenure_months,
-    chartStartYear,
-  );
   const todayLabel = new Intl.DateTimeFormat("en-IN", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   }).format(now);
-  const scheduleViewLabel = loan.original_tenure_months % 12 === 0
-    ? `${loan.original_tenure_months / 12}-year view`
-    : `${loan.original_tenure_months}-month view`;
 
   return (
     <>
@@ -112,26 +75,14 @@ export function LoanDashboard({ data, rateRefreshing, rateRefreshError, onRefres
         <MetricCard label="Original tenure" value={`${loan.original_tenure_months} months`} note="Schedule revisions are versioned" icon={CalendarDays} />
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.75fr)]">
-        <Card className="overflow-hidden border-[#dce5e2] bg-white shadow-[0_10px_30px_rgba(20,50,44,0.04)]">
-          <CardHeader className="flex-row items-start justify-between gap-4 px-6">
-            <div><p className="text-base font-semibold">Outstanding balance</p><p className="mt-1 text-sm text-[#6a7f79]">Illustrative path at {rate.toFixed(2)}%</p></div>
-            <div className="rounded-full bg-[#edf6f3] px-3 py-1.5 text-xs font-semibold text-[#0f766e]">{scheduleViewLabel}</div>
-          </CardHeader>
-          <CardContent className="px-2 pb-1 sm:px-5">
-            <ChartContainer config={chartConfig} className="h-[290px] w-full aspect-auto">
-              <AreaChart data={balanceData} margin={{ left: 0, right: 16, top: 12, bottom: 0 }}>
-                <defs><linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#0f766e" stopOpacity={0.24} /><stop offset="100%" stopColor="#0f766e" stopOpacity={0.02} /></linearGradient></defs>
-                <CartesianGrid vertical={false} stroke="#e8efed" />
-                <XAxis dataKey="year" axisLine={false} tickLine={false} tickMargin={12} />
-                <YAxis axisLine={false} tickLine={false} width={42} tickFormatter={(value) => `₹${value}L`} />
-                <ChartTooltip cursor={{ stroke: "#9fb8b2", strokeDasharray: "4 4" }} content={<ChartTooltipContent formatter={(value) => <span className="font-semibold">₹{String(value)} lakh</span>} />} />
-                <Area type="monotone" dataKey="balance" stroke="#0f766e" strokeWidth={3} fill="url(#balanceFill)" />
-                <ReferenceDot x={String(chartStartYear)} y={balanceData[0]?.balance ?? 0} r={5} fill="#d9f99d" stroke="#0d2824" strokeWidth={3} />
-              </AreaChart>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.75fr)] xl:items-start">
+        <RepaymentBreakdown
+          principal={Number(loan.total_financed_amount)}
+          annualRate={rate}
+          months={loan.original_tenure_months}
+          startDate={loan.regular_emi_start_date}
+          debitedEmi={Number(loan.regular_emi_amount)}
+        />
 
         <Card className="border-[#dce5e2] bg-[#102f2a] text-white shadow-[0_10px_30px_rgba(20,50,44,0.08)]">
           <CardHeader className="px-6"><div className="flex items-center justify-between"><div className="grid size-10 place-items-center rounded-xl bg-white/10"><CalendarDays className="size-5 text-[#d9f99d]" /></div><span className="rounded-full bg-[#d9f99d] px-2.5 py-1 text-xs font-semibold text-[#173d35]">{upcomingInstallment ? (daysUntilDue === 0 ? "Due today" : `In ${daysUntilDue} day${daysUntilDue === 1 ? "" : "s"}`) : "No upcoming"}</span></div></CardHeader>
