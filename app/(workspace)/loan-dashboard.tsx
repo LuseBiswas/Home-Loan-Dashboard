@@ -79,8 +79,9 @@ export function LoanDashboard({ data, rateRefreshing, rateRefreshError, onRefres
         <NextInstallmentCard rows={schedule} upcoming={upcomingInstallment} />
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <RateCard data={latestRate} loan={loan} />
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        {/* Rate watch is hidden for now. */}
+        {/* <RateCard data={latestRate} loan={loan} /> */}
         <ActionCard icon={Sparkles} title="Test a prepayment" copy="See how an extra payment changes your tenure and total interest." action="Open simulator" href="/simulator" />
         <ActionCard icon={FileText} title="Keep documents together" copy="Store statements, certificates and payment receipts privately." action="View documents" />
       </div>
@@ -92,6 +93,8 @@ function MetricCard({ label, value, note, icon: Icon }: { label: string; value: 
   return <Card className="gap-4 border-[#dce5e2] bg-white py-5 shadow-none"><CardContent className="px-5"><div className="flex items-center justify-between"><p className="text-sm font-medium text-[#6a7f79]">{label}</p><Icon className="size-4 text-[#789089]" /></div><p className="mt-4 text-[1.65rem] font-semibold tracking-[-0.04em]">{value}</p><p className="mt-1 text-xs text-[#789089]">{note}</p></CardContent></Card>;
 }
 
+// Kept for the Rate watch feature, which is hidden for now.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function RateCard({ data, loan }: { data: DashboardData["latestRate"]; loan: DashboardData["loan"] }) {
   const applied = Number(data?.actual_applied_rate ?? loan.current_interest_rate);
   const expected = data?.expected_loan_rate === null || data?.expected_loan_rate === undefined ? null : Number(data.expected_loan_rate);

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bell, CalendarDays, FileText, Gauge, Landmark, LayoutDashboard, Menu, Percent, ShieldCheck, UserRound,
+  Bell, CalendarDays, FileText, Gauge, Landmark, LayoutDashboard, Menu, ShieldCheck, UserRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfileMenu } from "@/components/profile-menu";
@@ -12,7 +12,8 @@ const navItems: { label: string; icon: typeof LayoutDashboard; href?: string }[]
   { label: "Overview", icon: LayoutDashboard, href: "/" },
   { label: "Schedule", icon: CalendarDays, href: "/schedule" },
   { label: "Simulator", icon: Gauge, href: "/simulator" },
-  { label: "Rate watch", icon: Percent },
+  // Rate watch is hidden for now; re-add `Percent` to the lucide import to bring it back.
+  // { label: "Rate watch", icon: Percent },
   { label: "Documents", icon: FileText },
   { label: "Profile", icon: UserRound, href: "/profile" },
 ];
