@@ -10,7 +10,7 @@ import { ProfileMenu } from "@/components/profile-menu";
 
 const navItems: { label: string; icon: typeof LayoutDashboard; href?: string }[] = [
   { label: "Overview", icon: LayoutDashboard, href: "/" },
-  { label: "Schedule", icon: CalendarDays },
+  { label: "Schedule", icon: CalendarDays, href: "/schedule" },
   { label: "Simulator", icon: Gauge },
   { label: "Rate watch", icon: Percent },
   { label: "Documents", icon: FileText },

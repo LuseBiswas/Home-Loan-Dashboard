@@ -152,3 +152,20 @@ export function totalsOf(rows: AmortizationRow[]) {
 export function crossoverRow(rows: AmortizationRow[]) {
   return rows.find((row) => row.principal > row.interest) ?? null;
 }
+
+// The loan's full EMI schedule at a given rate; empty until the EMI start date is known.
+export function loanSchedule(loan: {
+  total_financed_amount: number;
+  original_tenure_months: number;
+  regular_emi_start_date: string | null;
+  regular_emi_amount: number;
+}, annualRate: number) {
+  if (!loan.regular_emi_start_date) return [];
+  return buildAmortization({
+    principal: Number(loan.total_financed_amount),
+    annualRate,
+    months: loan.original_tenure_months,
+    startDate: loan.regular_emi_start_date,
+    debitedEmi: Number(loan.regular_emi_amount),
+  });
+}

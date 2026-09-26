@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import {
-  AmortizationRow, buildAmortization, crossoverRow, groupByYear, monthsOf, periodStartYear, PeriodSummary, totalsOf, YearType,
+  AmortizationRow, crossoverRow, groupByYear, monthsOf, periodStartYear, PeriodSummary, totalsOf, YearType,
 } from "@/lib/amortization";
 import { cn } from "@/lib/utils";
 
@@ -46,27 +46,21 @@ function todayIso() {
 }
 
 type RepaymentBreakdownProps = {
+  rows: AmortizationRow[];
   principal: number;
   annualRate: number;
-  months: number;
-  startDate: string | null;
-  debitedEmi: number;
 };
 
-export function RepaymentBreakdown({ principal, annualRate, months, startDate, debitedEmi }: RepaymentBreakdownProps) {
+export function RepaymentBreakdown({ rows, principal, annualRate }: RepaymentBreakdownProps) {
   const [metric, setMetric] = useState<Metric>("split");
   const [view, setView] = useState<View>("yearly");
   const [yearType, setYearType] = useState<YearType>("financial");
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [showTable, setShowTable] = useState(false);
 
-  const rows = useMemo(
-    () => (startDate ? buildAmortization({ principal, annualRate, months, startDate, debitedEmi }) : []),
-    [principal, annualRate, months, startDate, debitedEmi],
-  );
   const years = useMemo(() => groupByYear(rows, yearType), [rows, yearType]);
 
-  if (!startDate || rows.length === 0) {
+  if (rows.length === 0) {
     return (
       <Card className="border-[#dce5e2] bg-white shadow-none">
         <CardContent className="px-6 py-10 text-center text-sm text-[#6a7f79]">Add your regular EMI start date to see the repayment breakdown.</CardContent>
@@ -196,7 +190,7 @@ export function RepaymentBreakdown({ principal, annualRate, months, startDate, d
   );
 }
 
-function Segmented<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (value: T) => void }) {
+export function Segmented<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (value: T) => void }) {
   return (
     <div role="group" aria-label={label} className="inline-flex shrink-0 rounded-lg bg-[#e8efed] p-0.5">
       {options.map((option) => {
