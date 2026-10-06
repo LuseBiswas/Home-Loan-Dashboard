@@ -105,7 +105,7 @@ export function Workspace({ children }: { children: React.ReactNode }) {
 
   return (
     <WorkspaceContext.Provider value={{ session, loan: activeLoan, refreshLoan, demo }}>
-      <AppShell lenderName={activeLoan.lender_name} loanReference={activeLoan.loan_reference_masked} userEmail={session.user.email ?? ""} onSignOut={signOut} demo={demo}>
+      <AppShell loanId={activeLoan.id} currentRate={Number(activeLoan.current_interest_rate)} lenderName={activeLoan.lender_name} loanReference={activeLoan.loan_reference_masked} userEmail={session.user.email ?? ""} onSignOut={signOut} demo={demo}>
         {children}
       </AppShell>
     </WorkspaceContext.Provider>

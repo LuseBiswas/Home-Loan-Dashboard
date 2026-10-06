@@ -29,9 +29,9 @@ export function ProfileMenu({ userEmail, lenderName, loanReference, onSignOut }:
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-auto gap-1.5 rounded-full py-1 pr-2 pl-1 hover:bg-[#edf6f3] data-[state=open]:bg-[#edf6f3]" aria-label="Open profile menu">
+        <Button variant="ghost" className="h-auto gap-1.5 rounded-full p-1 lg:pr-2 hover:bg-[#edf6f3] data-[state=open]:bg-[#edf6f3]" aria-label="Open profile menu">
           <span className="grid size-10 place-items-center rounded-full bg-[#d9f99d] text-sm font-bold text-[#173d35]">{initials}</span>
-          <ChevronDown className="size-4 text-[#587069] transition-transform duration-200 in-data-[state=open]:rotate-180" />
+          <ChevronDown className="hidden size-4 lg:block text-[#587069] transition-transform duration-200 in-data-[state=open]:rotate-180" />
         </Button>
       </DropdownMenuTrigger>
 

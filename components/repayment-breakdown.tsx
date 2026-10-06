@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ChartConfig, ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import {
-  AmortizationRow, crossoverRow, isEmi, groupByYear, monthsOf, periodStartYear, PeriodSummary, totalsOf, YearType,
+  AmortizationRow, crossoverRow, groupByYear, monthsOf, periodStartYear, PeriodSummary, totalsOf, YearType,
 } from "@/lib/amortization";
 import { cn } from "@/lib/utils";
 
@@ -47,11 +47,9 @@ function todayIso() {
 
 type RepaymentBreakdownProps = {
   rows: AmortizationRow[];
-  principal: number;
-  annualRate: number;
 };
 
-export function RepaymentBreakdown({ rows, principal, annualRate }: RepaymentBreakdownProps) {
+export function RepaymentBreakdown({ rows }: RepaymentBreakdownProps) {
   const [metric, setMetric] = useState<Metric>("split");
   const [view, setView] = useState<View>("yearly");
   const [yearType, setYearType] = useState<YearType>("financial");
@@ -99,30 +97,28 @@ export function RepaymentBreakdown({ rows, principal, annualRate }: RepaymentBre
   return (
     <Card className="overflow-hidden border-[#dce5e2] bg-white shadow-[0_10px_30px_rgba(20,50,44,0.04)]">
       <CardHeader className="gap-4 px-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-base font-semibold">Repayment breakdown</p>
-            <p className="mt-1 text-sm text-[#6a7f79]">Estimated at {annualRate.toFixed(2)}% on {money(principal)} over {rows.filter(isEmi).length} EMIs{rows[0]?.kind === "first_installment" ? " plus a first installment" : ""}</p>
-          </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-base font-semibold">Repayment breakdown</p>
           <Segmented
             label="Chart"
             value={metric}
             onChange={setMetric}
+            className="w-full sm:w-auto"
             options={[{ value: "split", label: "Principal vs interest" }, { value: "balance", label: "Balance" }]}
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
           <Segmented label="Period" value={view} onChange={setView} options={[{ value: "yearly", label: "Yearly" }, { value: "monthly", label: "Monthly" }]} />
-          <Segmented label="Year type" value={yearType} onChange={changeYearType} options={[{ value: "financial", label: "Financial year" }, { value: "calendar", label: "Calendar year" }]} />
+          <Segmented label="Year type" value={yearType} onChange={changeYearType} options={[{ value: "financial", label: "Financial year", short: "Financial" }, { value: "calendar", label: "Calendar year", short: "Calendar" }]} />
           {view === "monthly" ? (
-            <div className="flex items-center gap-1">
+            <div className="col-span-2 flex items-center gap-1">
               <Button type="button" variant="outline" size="icon-sm" aria-label="Previous year" disabled={activeIndex <= 0} onClick={() => setSelectedYear(years[activeIndex - 1].key)}><ChevronLeft /></Button>
               <select
                 aria-label="Year"
                 value={activeYear.key}
                 onChange={(event) => setSelectedYear(event.target.value)}
-                className="h-8 rounded-md border border-[#dce5e2] bg-white px-2 text-sm font-medium text-[#173d35] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                className="h-8 flex-1 rounded-md border border-[#dce5e2] bg-white px-2 text-sm font-medium text-[#173d35] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:flex-none"
               >
                 {years.map((year) => <option key={year.key} value={year.key}>{year.label}</option>)}
               </select>
@@ -133,11 +129,9 @@ export function RepaymentBreakdown({ rows, principal, annualRate }: RepaymentBre
       </CardHeader>
 
       <CardContent className="px-2 pb-5 sm:px-5">
-        <div className="grid grid-cols-2 gap-2 px-3 sm:grid-cols-4 sm:px-1">
+        <div className="grid grid-cols-2 gap-2 px-3 sm:px-1">
           <SummaryTile label={view === "yearly" ? "Total you'll pay" : `Paid in ${activeYear.label}`} value={money(scope.total)} note={`${scope.emiCount} EMI${scope.emiCount === 1 ? "" : "s"}`} />
-          <SummaryTile label="Principal" value={money(scope.principal)} note={scope.prepaid > 0 ? `Incl. ${money(scope.prepaid)} prepaid` : "Reduces your loan"} swatch={PRINCIPAL} />
           <SummaryTile label="Interest" value={money(scope.interest)} note={`${interestShare.toFixed(0)}% of what you pay`} swatch={INTEREST} />
-          <SummaryTile label={view === "yearly" ? "Balance at end" : `Balance after ${activeYear.label}`} value={money(scope.closing)} note={view === "yearly" ? "Fully repaid" : "Outstanding principal"} />
         </div>
 
         <div className="mt-5 flex flex-wrap items-center justify-between gap-2 px-3 sm:px-1">
@@ -190,9 +184,10 @@ export function RepaymentBreakdown({ rows, principal, annualRate }: RepaymentBre
   );
 }
 
-export function Segmented<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (value: T) => void }) {
+// `short` is shown instead of `label` on phones, where the options share a row.
+export function Segmented<T extends string>({ label, value, options, onChange, className }: { label: string; value: T; options: { value: T; label: string; short?: string }[]; onChange: (value: T) => void; className?: string }) {
   return (
-    <div role="group" aria-label={label} className="inline-flex shrink-0 rounded-lg bg-[#e8efed] p-0.5">
+    <div role="group" aria-label={label} className={cn("inline-flex shrink-0 rounded-lg bg-[#e8efed] p-0.5", className)}>
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -202,11 +197,11 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
             aria-pressed={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              "cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium whitespace-nowrap transition",
+              "flex-1 cursor-pointer rounded-md px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition outline-none focus-visible:ring-2 focus-visible:ring-[#0f766e]/45 sm:py-1",
               active ? "bg-white text-[#173d35] shadow-sm" : "text-[#587069] hover:text-[#173d35]",
             )}
           >
-            {option.label}
+            {option.short ? <><span className="sm:hidden">{option.short}</span><span className="hidden sm:inline">{option.label}</span></> : option.label}
           </button>
         );
       })}

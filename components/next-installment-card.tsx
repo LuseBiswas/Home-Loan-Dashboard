@@ -1,8 +1,13 @@
+"use client";
+
+import { useId, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, ChevronRight } from "lucide-react";
+import { motion } from "motion/react";
+import { CalendarDays, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { AmortizationRow, isEmi, totalsOf } from "@/lib/amortization";
 
 // Same hues as the repayment chart, stepped for the dark card (validated on #102f2a).
@@ -48,6 +53,11 @@ export function NextInstallmentCard({ rows, upcoming }: NextInstallmentCardProps
   const paidPercent = emiTotal > 0 ? (paid.emiCount / emiTotal) * 100 : 0;
   const firstEmi = rows.find(isEmi);
 
+  // On phones the details fold away below the EMI line; from md up they're always shown.
+  const [expanded, setExpanded] = useState(false);
+  const isMobile = useIsMobile();
+  const detailsId = useId();
+
   return (
     <Card className="h-full border-[#dce5e2] bg-[#102f2a] text-white shadow-[0_10px_30px_rgba(20,50,44,0.08)]">
       <CardHeader className="px-6">
@@ -65,6 +75,32 @@ export function NextInstallmentCard({ rows, upcoming }: NextInstallmentCardProps
         <p className="mt-2 text-sm text-[#c6d9d4]">{dueDate ? longDate(dueDate) : "No scheduled installment"}</p>
         {split ? <p className="mt-1 text-xs text-[#9ec0b8]">EMI {split.number} of {emiTotal}</p> : isFirstInstallment ? <p className="mt-1 text-xs text-[#9ec0b8]">First installment · interest only</p> : null}
 
+        <button
+          type="button"
+          onClick={() => setExpanded((value) => !value)}
+          aria-expanded={expanded}
+          aria-controls={detailsId}
+          className="mt-4 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-white/6 py-2.5 text-xs font-semibold text-[#d9f99d] transition hover:bg-white/10 md:hidden"
+        >
+          {expanded ? "Hide details" : "Show breakdown"}
+          <motion.span
+            className="inline-flex"
+            animate={expanded ? { rotate: 180, y: 0 } : { rotate: 0, y: [0, 3, 0] }}
+            transition={expanded ? { duration: 0.3 } : { rotate: { duration: 0.3 }, y: { duration: 1.6, ease: "easeInOut", repeat: Infinity } }}
+          >
+            <ChevronDown className="size-4" />
+          </motion.span>
+        </button>
+
+        {/* Motion animates the inline height on phones; the md: overrides keep it open on larger screens. */}
+        <motion.div
+          id={detailsId}
+          inert={isMobile && !expanded}
+          initial={false}
+          animate={expanded ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
+          transition={{ height: { duration: 0.45, ease: [0.22, 1, 0.36, 1] }, opacity: { duration: 0.3, delay: expanded ? 0.1 : 0 } }}
+          className="flex flex-1 flex-col overflow-hidden md:h-auto! md:opacity-100!"
+        >
         {isFirstInstallment ? (
           <div className="mt-6 space-y-2 text-sm">
             <p className="text-xs leading-5 text-[#c6d9d4]">Interest for the days between disbursement and your EMI cycle. It doesn&apos;t reduce your principal.</p>
@@ -113,6 +149,7 @@ export function NextInstallmentCard({ rows, upcoming }: NextInstallmentCardProps
             <Link href="/schedule#next">View EMI schedule<ChevronRight className="size-4" /></Link>
           </Button>
         </div>
+        </motion.div>
       </CardContent>
     </Card>
   );
