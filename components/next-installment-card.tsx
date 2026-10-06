@@ -92,14 +92,15 @@ export function NextInstallmentCard({ rows, upcoming }: NextInstallmentCardProps
           </motion.span>
         </button>
 
-        {/* Motion animates the inline height on phones; the md: overrides keep it open on larger screens. */}
+        {/* Motion animates the inline height on phones; the md: overrides keep it open on larger screens.
+            No flex-1 on phones: a flex-basis would size the card to the hidden content and ignore the height. */}
         <motion.div
           id={detailsId}
           inert={isMobile && !expanded}
           initial={false}
           animate={expanded ? { height: "auto", opacity: 1 } : { height: 0, opacity: 0 }}
           transition={{ height: { duration: 0.45, ease: [0.22, 1, 0.36, 1] }, opacity: { duration: 0.3, delay: expanded ? 0.1 : 0 } }}
-          className="flex flex-1 flex-col overflow-hidden md:h-auto! md:opacity-100!"
+          className="flex flex-col overflow-hidden md:h-auto! md:flex-1 md:opacity-100!"
         >
         {isFirstInstallment ? (
           <div className="mt-6 space-y-2 text-sm">
